@@ -31,15 +31,15 @@ public class Schedule {
     @Column(name = "message")
     private String message;
 
-    @Column(name = "dateTime")
+    @Column(name = "dateTime", nullable = false)
     private LocalDateTime dateTime;
 
-    @Column(name = "year", insertable = false, updatable = false)
+    @Column(name = "year", insertable = false, updatable = false, columnDefinition = "EXTRACT(YEAR FROM dateTime)")
     private Integer year;
 
-    @Column(name = "month", insertable = false, updatable = false)
+    @Column(name = "month", insertable = false, updatable = false, columnDefinition = "EXTRACT(MONTH FROM dateTime)")
     private Integer month;
 
-    @Column(name = "date", insertable = false, updatable = false)
+    @Column(name = "date", insertable = false, updatable = false, columnDefinition = "EXTRACT(DAY FROM dateTime)")
     private Integer day;
 } 
