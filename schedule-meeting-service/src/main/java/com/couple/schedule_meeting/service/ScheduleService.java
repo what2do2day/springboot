@@ -1,6 +1,7 @@
 package com.couple.schedule_meeting.service;
 
 import com.couple.schedule_meeting.dto.ScheduleCreateRequest;
+import com.couple.schedule_meeting.dto.ScheduleUpdateRequest;
 import com.couple.schedule_meeting.entity.Schedule;
 import com.couple.schedule_meeting.exception.ScheduleNotFoundException;
 import com.couple.schedule_meeting.repository.ScheduleRepository;
@@ -38,5 +39,21 @@ public class ScheduleService {
     public Schedule getScheduleById(UUID scheduleId) {
         return scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
+    }
+
+    @Transactional
+    public Schedule updateSchedule(UUID scheduleId, ScheduleUpdateRequest request) {
+        Schedule existingSchedule = getScheduleById(scheduleId);
+        
+        Schedule updatedSchedule = Schedule.builder()
+                .id(existingSchedule.getId())
+                .coupleId(existingSchedule.getCoupleId())
+                .userId(existingSchedule.getUserId())
+                .name(request.getName() != null ? request.getName() : existingSchedule.getName())
+                .message(request.getMessage() != null ? request.getMessage() : existingSchedule.getMessage())
+                .dateTime(request.getDateTime() != null ? request.getDateTime() : existingSchedule.getDateTime())
+                .build();
+        
+        return scheduleRepository.save(updatedSchedule);
     }
 } 

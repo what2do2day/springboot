@@ -1,6 +1,7 @@
 package com.couple.schedule_meeting.controller;
 
 import com.couple.schedule_meeting.dto.ScheduleCreateRequest;
+import com.couple.schedule_meeting.dto.ScheduleUpdateRequest;
 import com.couple.schedule_meeting.entity.Schedule;
 import com.couple.schedule_meeting.service.ScheduleService;
 import lombok.RequiredArgsConstructor;
@@ -34,5 +35,14 @@ public class ScheduleController {
         UUID scheduleUuid = UUID.fromString(scheduleId);
         Schedule schedule = scheduleService.getScheduleById(scheduleUuid);
         return ResponseEntity.ok(schedule);
+    }
+
+    @PutMapping("/{scheduleId}")
+    public ResponseEntity<Schedule> updateSchedule(
+            @PathVariable String scheduleId,
+            @RequestBody ScheduleUpdateRequest request) {
+        UUID scheduleUuid = UUID.fromString(scheduleId);
+        Schedule updatedSchedule = scheduleService.updateSchedule(scheduleUuid, request);
+        return ResponseEntity.ok(updatedSchedule);
     }
 } 
