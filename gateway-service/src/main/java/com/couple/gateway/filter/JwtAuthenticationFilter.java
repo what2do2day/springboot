@@ -1,74 +1,93 @@
 package com.couple.gateway.filter;
 
 import com.couple.common.security.JwtTokenProvider;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.filter.GlobalFilter;
-import org.springframework.core.Ordered;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
+
+import java.util.UUID;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
-public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
+public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAuthenticationFilter.Config> {
 
-    private final JwtTokenProvider jwtTokenProvider;
+    @Autowired
+    private ApplicationContext applicationContext;
+
+    public JwtAuthenticationFilter() {
+        super(Config.class);
+    }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        ServerHttpRequest request = exchange.getRequest();
-        String path = request.getPath().value();
+    public GatewayFilter apply(Config config) {
+        return (exchange, chain) -> {
+            ServerHttpRequest request = exchange.getRequest();
 
-        // 인증이 필요하지 않은 경로들
-        if (isPublicPath(path)) {
-            return chain.filter(exchange);
-        }
+            // 인증이 필요하지 않은 경로 체크
+            String path = request.getPath().value();
+            if (isPublicPath(path)) {
+                return chain.filter(exchange);
+            }
 
-        String token = getTokenFromRequest(request);
+            // Authorization 헤더에서 JWT 토큰 추출
+            String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                log.warn("JWT 토큰이 없습니다. 경로: {}", path);
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return exchange.getResponse().setComplete();
+            }
 
-        if (!StringUtils.hasText(token)) {
-            log.warn("토큰이 없습니다. 경로: {}", path);
-            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-            return exchange.getResponse().setComplete();
-        }
+            String token = authHeader.substring(7);
 
-        if (!jwtTokenProvider.validateToken(token)) {
-            log.warn("유효하지 않은 토큰입니다. 경로: {}", path);
-            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-            return exchange.getResponse().setComplete();
-        }
+            try {
+                // ApplicationContext를 통해 JwtTokenProvider 가져오기
+                JwtTokenProvider jwtTokenProvider = applicationContext.getBean(JwtTokenProvider.class);
 
-        String userId = jwtTokenProvider.getUserIdFromToken(token);
-        ServerHttpRequest modifiedRequest = request.mutate()
-                .header("X-User-ID", userId)
-                .build();
+                // JWT 토큰 검증
+                if (!jwtTokenProvider.validateToken(token)) {
+                    log.warn("유효하지 않은 JWT 토큰입니다. 경로: {}", path);
+                    exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                    return exchange.getResponse().setComplete();
+                }
 
-        return chain.filter(exchange.mutate().request(modifiedRequest).build());
+                // 사용자 ID와 커플 ID 추출
+                UUID userId = jwtTokenProvider.getUserIdFromToken(token);
+                UUID coupleId = jwtTokenProvider.getCoupleIdFromToken(token);
+
+                // 헤더에 사용자 정보 추가
+                ServerHttpRequest modifiedRequest = request.mutate()
+                        .header("X-User-ID", userId.toString())
+                        .header("X-Couple-ID", coupleId != null ? coupleId.toString() : "")
+                        .build();
+
+                log.debug("JWT 인증 성공. 사용자 ID: {}, 커플 ID: {}, 경로: {}", userId, coupleId, path);
+                return chain.filter(exchange.mutate().request(modifiedRequest).build());
+
+            } catch (Exception e) {
+                log.error("JWT 토큰 처리 중 오류 발생: {}", e.getMessage());
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return exchange.getResponse().setComplete();
+            }
+        };
     }
 
     private boolean isPublicPath(String path) {
+        // 인증이 필요하지 않은 공개 경로들
         return path.startsWith("/api/auth/") ||
-                path.startsWith("/api/health") ||
-                path.startsWith("/actuator/");
+                path.startsWith("/users/signup") ||
+                path.startsWith("/users/login") ||
+                path.startsWith("/actuator/") ||
+                path.equals("/health") ||
+                path.equals("/info");
     }
 
-    private String getTokenFromRequest(ServerHttpRequest request) {
-        String bearerToken = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        return null;
-    }
-
-    @Override
-    public int getOrder() {
-        return -100; // 높은 우선순위
+    public static class Config {
+        // 설정이 필요한 경우 여기에 추가
     }
 }
