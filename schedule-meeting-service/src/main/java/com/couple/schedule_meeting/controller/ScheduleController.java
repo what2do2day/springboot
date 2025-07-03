@@ -3,12 +3,12 @@ package com.couple.schedule_meeting.controller;
 import com.couple.schedule_meeting.dto.ScheduleCreateRequest;
 import com.couple.schedule_meeting.dto.ScheduleResponse;
 import com.couple.schedule_meeting.dto.ScheduleUpdateRequest;
+import com.couple.schedule_meeting.entity.Schedule;
 import com.couple.schedule_meeting.service.ScheduleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -26,30 +26,38 @@ public class ScheduleController {
         UUID userUuid = UUID.fromString(userId);
         UUID coupleUuid = UUID.fromString(coupleId);
         
-        ScheduleResponse createdSchedule = scheduleService.createSchedule(request, coupleUuid, userUuid);
-        return ResponseEntity.ok(createdSchedule);
+        Schedule createdSchedule = scheduleService.createSchedule(request, coupleUuid, userUuid);
+        return ResponseEntity.ok(ScheduleResponse.from(createdSchedule));
     }
 
     @GetMapping("/{scheduleId}")
-    public ResponseEntity<ScheduleResponse> getSchedule(@PathVariable String scheduleId) {
+    public ResponseEntity<ScheduleResponse> getSchedule(
+            @PathVariable String scheduleId,
+            @RequestHeader("couple_id") String coupleId) {
         UUID scheduleUuid = UUID.fromString(scheduleId);
-        ScheduleResponse schedule = scheduleService.getScheduleById(scheduleUuid);
-        return ResponseEntity.ok(schedule);
+        UUID coupleUuid = UUID.fromString(coupleId);
+        Schedule schedule = scheduleService.getScheduleById(scheduleUuid, coupleUuid);
+        return ResponseEntity.ok(ScheduleResponse.from(schedule));
     }
 
     @PutMapping("/{scheduleId}")
     public ResponseEntity<ScheduleResponse> updateSchedule(
             @PathVariable String scheduleId,
-            @RequestBody ScheduleUpdateRequest request) {
+            @RequestBody ScheduleUpdateRequest request,
+            @RequestHeader("couple_id") String coupleId) {
         UUID scheduleUuid = UUID.fromString(scheduleId);
-        ScheduleResponse updatedSchedule = scheduleService.updateSchedule(scheduleUuid, request);
-        return ResponseEntity.ok(updatedSchedule);
+        UUID coupleUuid = UUID.fromString(coupleId);
+        Schedule updatedSchedule = scheduleService.updateSchedule(scheduleUuid, request, coupleUuid);
+        return ResponseEntity.ok(ScheduleResponse.from(updatedSchedule));
     }
 
     @DeleteMapping("/{scheduleId}")
-    public ResponseEntity<Void> deleteSchedule(@PathVariable String scheduleId) {
+    public ResponseEntity<Void> deleteSchedule(
+            @PathVariable String scheduleId,
+            @RequestHeader("couple_id") String coupleId) {
         UUID scheduleUuid = UUID.fromString(scheduleId);
-        scheduleService.deleteSchedule(scheduleUuid);
+        UUID coupleUuid = UUID.fromString(coupleId);
+        scheduleService.deleteSchedule(scheduleUuid, coupleUuid);
         return ResponseEntity.noContent().build();
     }
 } 

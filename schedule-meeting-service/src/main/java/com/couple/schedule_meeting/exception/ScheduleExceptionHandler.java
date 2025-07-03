@@ -22,6 +22,15 @@ public class ScheduleExceptionHandler {
                 .body(error);
     }
 
+    @ExceptionHandler(ScheduleAccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleScheduleAccessDeniedException(ScheduleAccessDeniedException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(error);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
         log.error("예상치 못한 오류 발생: ", ex);

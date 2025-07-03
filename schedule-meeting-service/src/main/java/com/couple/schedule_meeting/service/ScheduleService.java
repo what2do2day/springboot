@@ -1,9 +1,9 @@
 package com.couple.schedule_meeting.service;
 
 import com.couple.schedule_meeting.dto.ScheduleCreateRequest;
-import com.couple.schedule_meeting.dto.ScheduleResponse;
 import com.couple.schedule_meeting.dto.ScheduleUpdateRequest;
 import com.couple.schedule_meeting.entity.Schedule;
+import com.couple.schedule_meeting.exception.ScheduleAccessDeniedException;
 import com.couple.schedule_meeting.exception.ScheduleNotFoundException;
 import com.couple.schedule_meeting.repository.ScheduleRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ import java.util.UUID;
 public class ScheduleService {
     private final ScheduleRepository scheduleRepository;
 
-    public ScheduleResponse createSchedule(ScheduleCreateRequest request, UUID coupleId, UUID userId) {
+    public Schedule createSchedule(ScheduleCreateRequest request, UUID coupleId, UUID userId) {
         Schedule schedule = Schedule.builder()
                 .coupleId(coupleId)
                 .userId(userId)
@@ -28,8 +28,7 @@ public class ScheduleService {
                 .dateTime(request.getDateTime())
                 .build();
         
-        Schedule savedSchedule = scheduleRepository.save(schedule);
-        return ScheduleResponse.from(savedSchedule);
+        return scheduleRepository.save(schedule);
     }
 
     @Transactional(readOnly = true)
@@ -38,34 +37,51 @@ public class ScheduleService {
     }
 
     @Transactional(readOnly = true)
-    public ScheduleResponse getScheduleById(UUID scheduleId) {
-        Schedule schedule = scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
-        return ScheduleResponse.from(schedule);
+    public Schedule getScheduleById(UUID scheduleId, UUID coupleId) {
+        return findScheduleWithPermission(scheduleId, coupleId);
     }
 
     @Transactional
-    public ScheduleResponse updateSchedule(UUID scheduleId, ScheduleUpdateRequest request) {
-        Schedule existingSchedule = scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
+    public Schedule updateSchedule(UUID scheduleId, ScheduleUpdateRequest request, UUID coupleId) {
+        Schedule existingSchedule = findScheduleWithPermission(scheduleId, coupleId);
         
         Schedule updatedSchedule = Schedule.builder()
                 .id(existingSchedule.getId())
                 .coupleId(existingSchedule.getCoupleId())
                 .userId(existingSchedule.getUserId())
-                .name(request.getName() != null ? request.getName() : existingSchedule.getName())
-                .message(request.getMessage() != null ? request.getMessage() : existingSchedule.getMessage())
-                .dateTime(request.getDateTime() != null ? request.getDateTime() : existingSchedule.getDateTime())
+                .name(getValueOrDefault(request.getName(), existingSchedule.getName()))
+                .message(getValueOrDefault(request.getMessage(), existingSchedule.getMessage()))
+                .dateTime(getValueOrDefault(request.getDateTime(), existingSchedule.getDateTime()))
                 .build();
         
-        Schedule savedSchedule = scheduleRepository.save(updatedSchedule);
-        return ScheduleResponse.from(savedSchedule);
+        return scheduleRepository.save(updatedSchedule);
     }
 
     @Transactional
-    public void deleteSchedule(UUID scheduleId) {
+    public void deleteSchedule(UUID scheduleId, UUID coupleId) {
+        Schedule schedule = findScheduleWithPermission(scheduleId, coupleId);
+        scheduleRepository.delete(schedule);
+    }
+
+    /**
+     * 일정을 조회하고 권한을 확인하는 공통 메서드
+     */
+    private Schedule findScheduleWithPermission(UUID scheduleId, UUID coupleId) {
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
-        scheduleRepository.delete(schedule);
+        
+        // 권한 확인: 일정이 해당 커플에 속하는지 확인
+        if (!schedule.getCoupleId().equals(coupleId)) {
+            throw new ScheduleAccessDeniedException(scheduleId, coupleId);
+        }
+        
+        return schedule;
+    }
+
+    /**
+     * null이 아닌 경우 새로운 값을, null인 경우 기본값을 반환하는 유틸리티 메서드
+     */
+    private <T> T getValueOrDefault(T newValue, T defaultValue) {
+        return newValue != null ? newValue : defaultValue;
     }
 } 
