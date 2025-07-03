@@ -1,6 +1,7 @@
 package com.couple.schedule_meeting.service;
 
 import com.couple.schedule_meeting.dto.ScheduleCreateRequest;
+import com.couple.schedule_meeting.dto.ScheduleResponse;
 import com.couple.schedule_meeting.dto.ScheduleUpdateRequest;
 import com.couple.schedule_meeting.entity.Schedule;
 import com.couple.schedule_meeting.exception.ScheduleNotFoundException;
@@ -18,7 +19,7 @@ import java.util.UUID;
 public class ScheduleService {
     private final ScheduleRepository scheduleRepository;
 
-    public Schedule createSchedule(ScheduleCreateRequest request, UUID coupleId, UUID userId) {
+    public ScheduleResponse createSchedule(ScheduleCreateRequest request, UUID coupleId, UUID userId) {
         Schedule schedule = Schedule.builder()
                 .coupleId(coupleId)
                 .userId(userId)
@@ -27,7 +28,8 @@ public class ScheduleService {
                 .dateTime(request.getDateTime())
                 .build();
         
-        return scheduleRepository.save(schedule);
+        Schedule savedSchedule = scheduleRepository.save(schedule);
+        return ScheduleResponse.from(savedSchedule);
     }
 
     @Transactional(readOnly = true)
@@ -36,14 +38,16 @@ public class ScheduleService {
     }
 
     @Transactional(readOnly = true)
-    public Schedule getScheduleById(UUID scheduleId) {
-        return scheduleRepository.findById(scheduleId)
+    public ScheduleResponse getScheduleById(UUID scheduleId) {
+        Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
+        return ScheduleResponse.from(schedule);
     }
 
     @Transactional
-    public Schedule updateSchedule(UUID scheduleId, ScheduleUpdateRequest request) {
-        Schedule existingSchedule = getScheduleById(scheduleId);
+    public ScheduleResponse updateSchedule(UUID scheduleId, ScheduleUpdateRequest request) {
+        Schedule existingSchedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
         
         Schedule updatedSchedule = Schedule.builder()
                 .id(existingSchedule.getId())
@@ -54,12 +58,14 @@ public class ScheduleService {
                 .dateTime(request.getDateTime() != null ? request.getDateTime() : existingSchedule.getDateTime())
                 .build();
         
-        return scheduleRepository.save(updatedSchedule);
+        Schedule savedSchedule = scheduleRepository.save(updatedSchedule);
+        return ScheduleResponse.from(savedSchedule);
     }
 
     @Transactional
     public void deleteSchedule(UUID scheduleId) {
-        Schedule schedule = getScheduleById(scheduleId);
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
         scheduleRepository.delete(schedule);
     }
 } 

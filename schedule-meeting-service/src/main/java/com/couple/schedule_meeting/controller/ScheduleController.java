@@ -1,8 +1,8 @@
 package com.couple.schedule_meeting.controller;
 
 import com.couple.schedule_meeting.dto.ScheduleCreateRequest;
+import com.couple.schedule_meeting.dto.ScheduleResponse;
 import com.couple.schedule_meeting.dto.ScheduleUpdateRequest;
-import com.couple.schedule_meeting.entity.Schedule;
 import com.couple.schedule_meeting.service.ScheduleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +18,7 @@ public class ScheduleController {
     private final ScheduleService scheduleService;
 
     @PostMapping
-    public ResponseEntity<Schedule> createSchedule(
+    public ResponseEntity<ScheduleResponse> createSchedule(
             @RequestBody ScheduleCreateRequest request,
             @RequestHeader("user_id") String userId,
             @RequestHeader("couple_id") String coupleId) {
@@ -26,23 +26,23 @@ public class ScheduleController {
         UUID userUuid = UUID.fromString(userId);
         UUID coupleUuid = UUID.fromString(coupleId);
         
-        Schedule createdSchedule = scheduleService.createSchedule(request, coupleUuid, userUuid);
+        ScheduleResponse createdSchedule = scheduleService.createSchedule(request, coupleUuid, userUuid);
         return ResponseEntity.ok(createdSchedule);
     }
 
     @GetMapping("/{scheduleId}")
-    public ResponseEntity<Schedule> getSchedule(@PathVariable String scheduleId) {
+    public ResponseEntity<ScheduleResponse> getSchedule(@PathVariable String scheduleId) {
         UUID scheduleUuid = UUID.fromString(scheduleId);
-        Schedule schedule = scheduleService.getScheduleById(scheduleUuid);
+        ScheduleResponse schedule = scheduleService.getScheduleById(scheduleUuid);
         return ResponseEntity.ok(schedule);
     }
 
     @PutMapping("/{scheduleId}")
-    public ResponseEntity<Schedule> updateSchedule(
+    public ResponseEntity<ScheduleResponse> updateSchedule(
             @PathVariable String scheduleId,
             @RequestBody ScheduleUpdateRequest request) {
         UUID scheduleUuid = UUID.fromString(scheduleId);
-        Schedule updatedSchedule = scheduleService.updateSchedule(scheduleUuid, request);
+        ScheduleResponse updatedSchedule = scheduleService.updateSchedule(scheduleUuid, request);
         return ResponseEntity.ok(updatedSchedule);
     }
 
