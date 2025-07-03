@@ -28,4 +28,11 @@ public class ScheduleController {
         Schedule createdSchedule = scheduleService.createSchedule(request, coupleUuid, userUuid);
         return ResponseEntity.ok(createdSchedule);
     }
+
+    @GetMapping("/{scheduleId}")
+    public ResponseEntity<Schedule> getSchedule(@PathVariable String scheduleId) {
+        UUID scheduleUuid = UUID.fromString(scheduleId);
+        Schedule schedule = scheduleService.getScheduleById(scheduleUuid);
+        return ResponseEntity.ok(schedule);
+    }
 } 

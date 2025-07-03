@@ -2,6 +2,7 @@ package com.couple.schedule_meeting.service;
 
 import com.couple.schedule_meeting.dto.ScheduleCreateRequest;
 import com.couple.schedule_meeting.entity.Schedule;
+import com.couple.schedule_meeting.exception.ScheduleNotFoundException;
 import com.couple.schedule_meeting.repository.ScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,5 +32,11 @@ public class ScheduleService {
     @Transactional(readOnly = true)
     public List<Schedule> getCoupleSchedule(UUID coupleId, Integer year, Integer month) {
         return scheduleRepository.findByCoupleIdAndYearAndMonthOrderByDayAsc(coupleId, year, month);
+    }
+
+    @Transactional(readOnly = true)
+    public Schedule getScheduleById(UUID scheduleId) {
+        return scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new ScheduleNotFoundException(scheduleId));
     }
 } 
