@@ -10,6 +10,7 @@ public class MeetingCourseRecommendRequest {
     private LocalTime endTime;
     private LocalDate date;
     private List<String> keyword;
+    private String weather;
 
     public MeetingCourseRecommendRequest() {
     }
@@ -52,5 +53,13 @@ public class MeetingCourseRecommendRequest {
 
     public void setKeyword(List<String> keyword) {
         this.keyword = keyword;
+    }
+
+    public String getWeather() {
+        return weather;
+    }
+
+    public void setWeather(String weather) {
+        this.weather = weather;
     }
 } 
