@@ -1,0 +1,13 @@
+pluginManagement {
+	repositories {
+		maven { url = 'https://repo.spring.io/snapshot' }
+		gradlePluginPortal()
+	}
+}
+rootProject.name = 'couple-msa'
+
+include 'gateway-service'
+include 'user-couple-service'
+include 'schedule-meeting-service'
+include 'chat-push-service'
+include 'common-library'
