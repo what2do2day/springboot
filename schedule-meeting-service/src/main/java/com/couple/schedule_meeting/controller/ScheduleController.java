@@ -45,4 +45,11 @@ public class ScheduleController {
         Schedule updatedSchedule = scheduleService.updateSchedule(scheduleUuid, request);
         return ResponseEntity.ok(updatedSchedule);
     }
+
+    @DeleteMapping("/{scheduleId}")
+    public ResponseEntity<Void> deleteSchedule(@PathVariable String scheduleId) {
+        UUID scheduleUuid = UUID.fromString(scheduleId);
+        scheduleService.deleteSchedule(scheduleUuid);
+        return ResponseEntity.noContent().build();
+    }
 } 

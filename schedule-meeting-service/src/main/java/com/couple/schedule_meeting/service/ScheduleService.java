@@ -56,4 +56,10 @@ public class ScheduleService {
         
         return scheduleRepository.save(updatedSchedule);
     }
+
+    @Transactional
+    public void deleteSchedule(UUID scheduleId) {
+        Schedule schedule = getScheduleById(scheduleId);
+        scheduleRepository.delete(schedule);
+    }
 } 
