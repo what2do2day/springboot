@@ -1,0 +1,69 @@
+package com.couple.schedule_meeting.entity;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "tmp_meetings")
+public class TmpMeeting {
+    
+    @Id
+    private String id;
+    
+    private String name;
+    private LocalTime startTime;
+    private LocalTime endTime;
+    private LocalDate date;
+    private List<String> keyword;
+    private MeetingResults results;
+    
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MeetingResults {
+        private List<TimeSlot> timeSlots;
+        private Object routes; // routes는 나중에 별도 구조로 정의
+    }
+    
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TimeSlot {
+        private String slot;
+        private List<StoreCandidate> topCandidates;
+        private LlmRecommendation llmRecommendation;
+    }
+    
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class StoreCandidate {
+        private String storeName;
+        private Double score;
+        private Double similarity;
+        private String description;
+    }
+    
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class LlmRecommendation {
+        private String selected;
+        private String reason;
+    }
+} 

@@ -27,7 +27,11 @@ public class GlobalExceptionHandler {
         });
 
         return ResponseEntity.badRequest()
-                .body(ApiResponse.error("유효성 검사 실패", errors));
+                .body(ApiResponse.<Map<String, String>>builder()
+                        .success(false)
+                        .message("유효성 검사 실패")
+                        .data(errors)
+                        .build());
     }
 
     @ExceptionHandler(Exception.class)
