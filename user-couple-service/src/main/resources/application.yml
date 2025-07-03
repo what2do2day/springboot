@@ -5,28 +5,29 @@ spring:
   application:
     name: user-couple-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/couple_user_db
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:password}
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: stockroom_user
+    password: stockroom_pass
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+    defer-datasource-initialization: true
   redis:
     host: localhost
     port: 6379
-  security:
-    oauth2:
-      client:
-        registration:
-          kakao:
-            client-id: ${KAKAO_CLIENT_ID:your-kakao-client-id}
-            client-secret: ${KAKAO_CLIENT_SECRET:your-kakao-client-secret}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+  # OAuth2 설정 제거 - JWT 인증만 사용
 
 jwt:
   secret: ${JWT_SECRET:your-super-secret-jwt-key-here-make-it-long-enough}
@@ -41,5 +42,17 @@ springdoc:
 
 logging:
   level:
-    com.couple.user_couple: DEBUG
-    org.springframework.security: DEBUG 
+    com.couple: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    root: INFO
+
+# Eureka 설정 제거 - 직접 주소 사용
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info 

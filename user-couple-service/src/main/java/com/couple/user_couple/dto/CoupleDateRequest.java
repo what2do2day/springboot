@@ -1,17 +1,19 @@
 package com.couple.user_couple.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CoupleMatchRequest {
+public class CoupleDateRequest {
 
-    @NotBlank(message = "매칭 코드는 필수입니다.")
-    private String matchCode;
+    @NotNull(message = "날짜는 필수입니다")
+    private LocalDate date;
 }
