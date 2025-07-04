@@ -2,7 +2,7 @@ package com.couple.schedule_meeting.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.io.Serializable;
+import org.hibernate.annotations.GenericGenerator;
 import java.util.UUID;
 
 @Entity
@@ -12,21 +12,18 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class MeetingKeyword {
-    @EmbeddedId
-    private MeetingKeywordId id;
+    @Id
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(name = "id", updatable = false, nullable = false)
+    private UUID id;
+
+    @Column(name = "meeting_id", nullable = false)
+    private UUID meetingId;
+
+    @Column(name = "keyword", length = 100, nullable = false)
+    private String keyword;
 
     @Column(name = "sequence")
     private Integer sequence;
-
-    @Embeddable
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class MeetingKeywordId implements Serializable {
-        @Column(name = "meeting_id")
-        private UUID meetingId;
-
-        @Column(name = "keyword_id")
-        private UUID keywordId;
-    }
 } 

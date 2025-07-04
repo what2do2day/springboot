@@ -31,6 +31,24 @@ public class ScheduleExceptionHandler {
                 .body(error);
     }
 
+    @ExceptionHandler(MeetingNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleMeetingNotFoundException(MeetingNotFoundException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(error);
+    }
+
+    @ExceptionHandler(MeetingAccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleMeetingAccessDeniedException(MeetingAccessDeniedException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(error);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
         log.error("예상치 못한 오류 발생: ", ex);
