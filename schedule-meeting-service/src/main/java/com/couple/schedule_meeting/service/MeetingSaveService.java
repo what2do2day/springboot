@@ -54,6 +54,10 @@ public class MeetingSaveService {
             // 5. MeetingKeywords 저장
             saveMeetingKeywordsFromTmpMeeting(tmpMeeting, savedMeeting.getId());
             
+            // 6. TmpMeeting 문서 삭제 (선택사항)
+            tmpMeetingRepository.deleteById(tmpMeetingId);
+            log.info("TmpMeeting 문서 삭제 완료: tmpMeetingId={}", tmpMeetingId);
+            
             log.info("Meeting 저장 완료: meetingId={}", savedMeeting.getId());
             return savedMeeting.getId();
             
