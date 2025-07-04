@@ -22,10 +22,10 @@ public class ScheduleController {
             @RequestBody ScheduleCreateRequest request,
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader("X-Couple-ID") String coupleId) {
-        
+
         UUID userUuid = UUID.fromString(userId);
         UUID coupleUuid = UUID.fromString(coupleId);
-        
+
         Schedule createdSchedule = scheduleService.createSchedule(request, coupleUuid, userUuid);
         return ResponseEntity.ok(ScheduleResponse.from(createdSchedule));
     }
@@ -60,4 +60,4 @@ public class ScheduleController {
         scheduleService.deleteSchedule(scheduleUuid, coupleUuid);
         return ResponseEntity.noContent().build();
     }
-} 
+}

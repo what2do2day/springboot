@@ -16,11 +16,29 @@ spring:
           filters:
             - RewritePath=/ws/(?<segment>.*), /ws/
             - name: WebSocketAuthFilter
+        - id: user-couple-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/users/**, /api/couples/**
+          filters:
+            - name: JwtAuthenticationFilter
+        - id: schedule-meeting-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/schedules/**, /api/meetings/**
+          filters:
+            - name: JwtAuthenticationFilter
+        - id: question-answer-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/questions/**, /api/user-answers/**, /api/user-tag-profiles/**, /api/tags/**
+          filters:
+            - name: JwtAuthenticationFilter
   security:
     # OAuth2 설정 제거 - Gateway에서는 JWT 인증만 사용
 
 jwt:
-  secret: ${JWT_SECRET:your-super-secret-jwt-key-here-make-it-long-enough}
+  secret: ${JWT_SECRET:mySuperStrongSecretKeyThatIsLongEnough}
   expiration: 86400000 # 24시간
 
 # Eureka 설정 제거 - 직접 주소 사용
