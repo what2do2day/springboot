@@ -88,6 +88,8 @@ public class UserService {
             String refreshToken = "refresh_token_" + user.getId() + "_" + System.currentTimeMillis();
 
             log.info("생성된 AccessToken: {}", accessToken);
+            log.info("AccessToken 길이: {}", accessToken.length());
+            log.info("AccessToken이 ey로 시작하는지: {}", accessToken.startsWith("ey"));
             log.info("생성된 RefreshToken: {}", refreshToken);
 
             UserToken userToken = UserToken.builder()

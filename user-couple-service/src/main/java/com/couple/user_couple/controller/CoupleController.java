@@ -6,7 +6,6 @@ import com.couple.user_couple.dto.CoupleMatchRequest;
 import com.couple.user_couple.dto.CoupleMatchAcceptRequest;
 import com.couple.user_couple.dto.CoupleResponse;
 import com.couple.user_couple.dto.HomeInfoResponse;
-import com.couple.user_couple.dto.CoupleMembersRequest;
 import com.couple.user_couple.dto.CoupleMemberResponse;
 import com.couple.user_couple.service.CoupleService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -93,11 +92,12 @@ public class CoupleController {
         return ResponseEntity.ok(ApiResponse.success("커플 날짜가 설정되었습니다.", null));
     }
 
-    @PostMapping("/members")
+    @GetMapping("/members")
     @Operation(summary = "커플 멤버 정보 조회", description = "해당 유저가 속한 커플의 모든 멤버 정보를 조회합니다.")
-    public ResponseEntity<List<CoupleMemberResponse>> getCoupleMembers(@RequestBody CoupleMembersRequest request) {
-        log.info("커플 멤버 정보 조회 API 호출: {}", request.getUserId());
-        List<CoupleMemberResponse> members = coupleService.getCoupleMembers(request);
+    public ResponseEntity<List<CoupleMemberResponse>> getCoupleMembers(
+            @Parameter(description = "사용자 ID", example = "123e4567-e89b-12d3-a456-426614174000") @RequestHeader("X-User-ID") String userId) {
+        log.info("커플 멤버 정보 조회 API 호출: {}", userId);
+        List<CoupleMemberResponse> members = coupleService.getCoupleMembers(UUID.fromString(userId));
         return ResponseEntity.ok(members);
     }
 }

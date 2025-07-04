@@ -5,7 +5,6 @@ import com.couple.user_couple.dto.CoupleMatchRequest;
 import com.couple.user_couple.dto.CoupleMatchAcceptRequest;
 import com.couple.user_couple.dto.CoupleResponse;
 import com.couple.user_couple.dto.HomeInfoResponse;
-import com.couple.user_couple.dto.CoupleMembersRequest;
 import com.couple.user_couple.dto.CoupleMemberResponse;
 import com.couple.user_couple.entity.Couple;
 import com.couple.user_couple.entity.User;
@@ -236,12 +235,12 @@ public class CoupleService {
                                 .build();
         }
 
-        public List<CoupleMemberResponse> getCoupleMembers(CoupleMembersRequest request) {
-                log.info("커플 멤버 정보 조회: {}", request.getUserId());
+        public List<CoupleMemberResponse> getCoupleMembers(UUID userId) {
+                log.info("커플 멤버 정보 조회: {}", userId);
 
                 // 사용자 확인
-                User user = userRepository.findById(request.getUserId())
-                                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + request.getUserId()));
+                User user = userRepository.findById(userId)
+                                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + userId));
 
                 // 커플 확인
                 if (user.getCoupleId() == null) {

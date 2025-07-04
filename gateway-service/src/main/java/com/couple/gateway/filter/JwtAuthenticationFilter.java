@@ -63,7 +63,7 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                 // 헤더에 사용자 정보 추가
                 ServerHttpRequest modifiedRequest = request.mutate()
                         .header("X-User-ID", userId.toString())
-                        .header("X-Couple-ID", coupleId != null ? coupleId.toString() : "")
+                        .header("X-Couple-ID", coupleId != null ? coupleId.toString() : "null")
                         .build();
 
                 log.debug("JWT 인증 성공. 사용자 ID: {}, 커플 ID: {}, 경로: {}", userId, coupleId, path);
@@ -82,6 +82,7 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
         return path.startsWith("/api/auth/") ||
                 path.startsWith("/users/signup") ||
                 path.startsWith("/users/login") ||
+                path.startsWith("/api/questions/test-headers") ||
                 path.startsWith("/actuator/") ||
                 path.equals("/health") ||
                 path.equals("/info");
