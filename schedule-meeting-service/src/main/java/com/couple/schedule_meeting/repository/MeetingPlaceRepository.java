@@ -15,8 +15,5 @@ public interface MeetingPlaceRepository extends JpaRepository<MeetingPlace, UUID
     @Query("SELECT mp FROM MeetingPlace mp WHERE mp.meetingId = :meetingId ORDER BY mp.sequence ASC")
     List<MeetingPlace> findByMeetingIdOrderBySequenceAsc(@Param("meetingId") UUID meetingId);
     
-    @Query("SELECT mp FROM MeetingPlace mp WHERE mp.name = :name")
-    List<MeetingPlace> findByName(@Param("name") String name);
-    
     void deleteByMeetingId(UUID meetingId);
 } 

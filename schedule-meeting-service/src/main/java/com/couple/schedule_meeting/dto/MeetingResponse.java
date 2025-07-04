@@ -3,6 +3,7 @@ package com.couple.schedule_meeting.dto;
 import com.couple.schedule_meeting.entity.Meeting;
 import com.couple.schedule_meeting.entity.MeetingPlace;
 import com.couple.schedule_meeting.entity.Route;
+import com.couple.schedule_meeting.entity.Place;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -41,15 +42,19 @@ public class MeetingResponse {
 
     public static MeetingResponse from(Meeting meeting, List<MeetingPlace> meetingPlaces, Route route) {
         List<MeetingPlaceResponse> placeResponses = meetingPlaces.stream()
-                .map(place -> MeetingPlaceResponse.builder()
-                        .id(place.getId())
-                        .name(place.getName())
-                        .address(place.getAddress())
-                        .category(place.getCategory())
-                        .latitude(place.getLatitude() != null ? place.getLatitude().toString() : null)
-                        .longitude(place.getLongitude() != null ? place.getLongitude().toString() : null)
-                        .sequence(place.getSequence())
-                        .build())
+                .map(meetingPlace -> {
+                    // Place 객체에서 장소 정보 가져오기
+                    Place place = meetingPlace.getPlace();
+                    return MeetingPlaceResponse.builder()
+                            .id(meetingPlace.getId())
+                            .name(place != null ? place.getName() : null)
+                            .address(place != null ? place.getAddress() : null)
+                            .category(place != null ? place.getCategory() : null)
+                            .latitude(place != null && place.getLatitude() != null ? place.getLatitude().toString() : null)
+                            .longitude(place != null && place.getLongitude() != null ? place.getLongitude().toString() : null)
+                            .sequence(meetingPlace.getSequence())
+                            .build();
+                })
                 .toList();
 
         return MeetingResponse.builder()
