@@ -25,6 +25,7 @@ dependencies {
 
     
     implementation 'org.postgresql:postgresql'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
     
     implementation project(':common-library')
     

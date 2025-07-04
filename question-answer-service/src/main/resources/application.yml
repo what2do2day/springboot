@@ -25,6 +25,15 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
   
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: question_answer_db
+      authentication-database: admin
+      username: mongoadmin
+      password: secretpass
+  
   jackson:
     default-property-inclusion: non_null
 
