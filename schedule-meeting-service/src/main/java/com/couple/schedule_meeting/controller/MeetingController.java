@@ -1,11 +1,14 @@
 package com.couple.schedule_meeting.controller;
 
+import com.couple.schedule_meeting.dto.MeetingResponse;
+import com.couple.schedule_meeting.service.MeetingService;
 import com.couple.schedule_meeting.service.WeatherCardService;
 import com.couple.schedule_meeting.service.MeetingRecommendationService;
 import com.couple.schedule_meeting.service.MeetingSaveService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -25,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/meetings")
 @RequiredArgsConstructor
 public class MeetingController {
+    private final MeetingService meetingService;
     private final WeatherCardService weatherCardService;
     private final MeetingRecommendationService meetingRecommendationService;
     private final MeetingSaveService meetingSaveService;
@@ -53,6 +57,27 @@ public class MeetingController {
         }
     }
     
+    @GetMapping("/{meetingId}")
+    public ResponseEntity<MeetingResponse> getMeeting(
+            @PathVariable String meetingId,
+            @RequestHeader("X-Couple-ID") String coupleId) {
+        
+        try {
+            UUID meetingUuid = UUID.fromString(meetingId);
+            UUID coupleUuid = UUID.fromString(coupleId);
+            
+            MeetingResponse response = meetingService.getMeetingById(meetingUuid, coupleUuid);
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            log.error("잘못된 UUID 형식: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("데이트 일정 조회 중 오류: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @PostMapping
     public ResponseEntity<String> saveMeeting(
             @RequestBody MeetingSaveRequest request,
