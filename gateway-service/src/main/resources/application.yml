@@ -34,4 +34,4 @@ management:
 logging:
   level:
     com.couple.gateway: DEBUG
-    org.springframework.cloud.gateway: DEBUG 
+    org.springframework.cloud.gateway: DEBUG
