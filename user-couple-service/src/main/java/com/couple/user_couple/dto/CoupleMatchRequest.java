@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 public class CoupleMatchRequest {
 
     private String name;
-    private String characterId;
+    private java.time.LocalDate startDate;
 }
