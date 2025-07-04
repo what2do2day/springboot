@@ -43,8 +43,18 @@ public class GatewayConfig {
                                                                 .filter(jwtFilter.apply(
                                                                                 new JwtAuthenticationFilter.Config())))
                                                 .uri("http://localhost:8082"))
+                                .route("question-answer-service", r -> r
+                                                .path("/api/questions/**", "/api/tags/**", "/api/user-answers/**",
+                                                                "/api/user-tag-profiles/**")
+                                                .filters(f -> f
+                                                                .rewritePath("/api/(?<segment>.*)", "/api/${segment}")
+                                                                .addRequestHeader("X-Response-Time",
+                                                                                System.currentTimeMillis() + "")
+                                                                .filter(jwtFilter.apply(
+                                                                                new JwtAuthenticationFilter.Config())))
+                                                .uri("http://localhost:8086"))
                                 .route("django-chat-service", r -> r
-                                                .path("/api/chat/**", "/api/push/**", "/api/questions/**")
+                                                .path("/api/chat/**", "/api/push/**")
                                                 .filters(f -> f
                                                                 .rewritePath("/api/(?<segment>.*)", "/api/${segment}")
                                                                 .addRequestHeader("X-Response-Time",

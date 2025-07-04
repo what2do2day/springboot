@@ -20,12 +20,12 @@ public class ScheduleController {
     @PostMapping
     public ResponseEntity<ScheduleResponse> createSchedule(
             @RequestBody ScheduleCreateRequest request,
-            @RequestHeader("user_id") String userId,
-            @RequestHeader("couple_id") String coupleId) {
-        
+            @RequestHeader("X-User-ID") String userId,
+            @RequestHeader("X-Couple-ID") String coupleId) {
+
         UUID userUuid = UUID.fromString(userId);
         UUID coupleUuid = UUID.fromString(coupleId);
-        
+
         Schedule createdSchedule = scheduleService.createSchedule(request, coupleUuid, userUuid);
         return ResponseEntity.ok(ScheduleResponse.from(createdSchedule));
     }
@@ -33,7 +33,7 @@ public class ScheduleController {
     @GetMapping("/{scheduleId}")
     public ResponseEntity<ScheduleResponse> getSchedule(
             @PathVariable String scheduleId,
-            @RequestHeader("couple_id") String coupleId) {
+            @RequestHeader("X-Couple-ID") String coupleId) {
         UUID scheduleUuid = UUID.fromString(scheduleId);
         UUID coupleUuid = UUID.fromString(coupleId);
         Schedule schedule = scheduleService.getScheduleById(scheduleUuid, coupleUuid);
@@ -44,7 +44,7 @@ public class ScheduleController {
     public ResponseEntity<ScheduleResponse> updateSchedule(
             @PathVariable String scheduleId,
             @RequestBody ScheduleUpdateRequest request,
-            @RequestHeader("couple_id") String coupleId) {
+            @RequestHeader("X-Couple-ID") String coupleId) {
         UUID scheduleUuid = UUID.fromString(scheduleId);
         UUID coupleUuid = UUID.fromString(coupleId);
         Schedule updatedSchedule = scheduleService.updateSchedule(scheduleUuid, request, coupleUuid);
@@ -54,10 +54,10 @@ public class ScheduleController {
     @DeleteMapping("/{scheduleId}")
     public ResponseEntity<Void> deleteSchedule(
             @PathVariable String scheduleId,
-            @RequestHeader("couple_id") String coupleId) {
+            @RequestHeader("X-Couple-ID") String coupleId) {
         UUID scheduleUuid = UUID.fromString(scheduleId);
         UUID coupleUuid = UUID.fromString(coupleId);
         scheduleService.deleteSchedule(scheduleUuid, coupleUuid);
         return ResponseEntity.noContent().build();
     }
-} 
+}

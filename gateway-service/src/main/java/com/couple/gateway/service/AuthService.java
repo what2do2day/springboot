@@ -24,6 +24,8 @@ public class AuthService {
     private final RestTemplate restTemplate;
 
     public LoginResponse login(LoginRequest request) {
+        log.info("Gateway에서 로그인 요청 처리: {}", request.getEmail());
+
         // User-Couple Service에 로그인 요청
         String userServiceUrl = "http://localhost:8081/api/users/login";
 
@@ -43,8 +45,12 @@ public class AuthService {
         String name = userData.get("name").toString();
         String email = userData.get("email").toString();
 
-        // User-Couple Service에서 생성된 토큰 사용
+        // User-Couple Service에서 생성된 토큰을 그대로 사용
         String accessToken = userData.get("accessToken").toString();
+
+        log.info("User-Couple Service에서 받은 토큰: {}", accessToken);
+        log.info("토큰 길이: {}", accessToken.length());
+        log.info("토큰이 ey로 시작하는지: {}", accessToken.startsWith("ey"));
 
         return new LoginResponse(accessToken, userId, name, email);
     }
