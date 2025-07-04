@@ -6,6 +6,9 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +22,9 @@ import java.util.Map;
 public class UserPreferenceService {
 
     private final MongoTemplate mongoTemplate;
+    @Value("${user-vector-service.url:http://localhost:8086}")
+    private String userVectorServiceUrl;
+    private final WebClient webClient;
 
     /**
      * MongoDB에서 사용자의 취향 벡터를 조회합니다.
@@ -28,24 +34,21 @@ public class UserPreferenceService {
      */
     public Map<String, Double> getUserPreferenceVector(String userId) {
         try {
-            log.info("MongoDB에서 취향 벡터 조회 시작: userId={}", userId);
-            
-            // TODO: 실제 컬렉션명과 필드명으로 수정 필요
-            Query query = new Query(Criteria.where("userId").is(userId));
-            Map<String, Object> result = mongoTemplate.findOne(query, Map.class, "user_preferences");
-            
-            if (result != null && result.containsKey("vector")) {
-                @SuppressWarnings("unchecked")
-                Map<String, Double> vector = (Map<String, Double>) result.get("vector");
-                log.info("MongoDB에서 취향 벡터 조회 성공: userId={}", userId);
-                return vector;
-            } else {
-                log.warn("MongoDB에서 취향 벡터를 찾을 수 없습니다: userId={}", userId);
-                return getDefaultPreferenceVector();
+            String url = userVectorServiceUrl + "/api/user-vectors/internal/" + userId;
+            Map<String, Double> raw = webClient.get()
+                .uri(url)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Double>>() {})
+                .block();
+            if (raw == null) return getDefaultPreferenceVector();
+            // key 변환: vector1 → vec_1
+            Map<String, Double> converted = new HashMap<>();
+            for (Map.Entry<String, Double> entry : raw.entrySet()) {
+                String newKey = entry.getKey().replace("vector", "vec_");
+                converted.put(newKey, entry.getValue());
             }
-            
+            return converted;
         } catch (Exception e) {
-            log.error("MongoDB에서 취향 벡터 조회 중 오류: {}", e.getMessage(), e);
             return getDefaultPreferenceVector();
         }
     }
