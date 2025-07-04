@@ -9,6 +9,7 @@ import com.couple.user_couple.entity.User;
 import com.couple.user_couple.entity.UserToken;
 import com.couple.user_couple.repository.UserRepository;
 import com.couple.user_couple.repository.UserTokenRepository;
+import com.couple.user_couple.repository.CoupleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +29,7 @@ public class UserService {
     private final UserTokenRepository userTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final CoupleRepository coupleRepository;
 
     public UserResponse signup(UserSignupRequest request) {
         log.info("회원가입 요청: {}", request.getEmail());
@@ -85,6 +87,9 @@ public class UserService {
             String accessToken = jwtTokenProvider.generateToken(user.getId(), user.getCoupleId());
             String refreshToken = "refresh_token_" + user.getId() + "_" + System.currentTimeMillis();
 
+            log.info("생성된 AccessToken: {}", accessToken);
+            log.info("생성된 RefreshToken: {}", refreshToken);
+
             UserToken userToken = UserToken.builder()
                     .userId(user.getId())
                     .accessToken(accessToken)
@@ -140,6 +145,30 @@ public class UserService {
         userRepository.delete(user);
     }
 
+    public UserResponse updateUserScore(UUID userId, Long newScore) {
+        log.info("사용자 점수 변경: {} -> {}", userId, newScore);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + userId));
+        user.setScore(newScore);
+        User updatedUser = userRepository.save(user);
+        updateCoupleTotalScoresIfNeeded(updatedUser);
+        return convertToResponse(updatedUser);
+    }
+
+    private void updateCoupleTotalScoresIfNeeded(User user) {
+        if (user.getCoupleId() != null) {
+            // 커플에 속한 모든 유저의 score 합산
+            var users = userRepository.findByCoupleId(user.getCoupleId());
+            long total = users.stream().mapToLong(u -> u.getScore() != null ? u.getScore() : 0L).sum();
+            var coupleOpt = coupleRepository.findById(user.getCoupleId());
+            if (coupleOpt.isPresent()) {
+                var couple = coupleOpt.get();
+                couple.setTotalScores(total);
+                coupleRepository.save(couple);
+            }
+        }
+    }
+
     private UserResponse convertToResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId())
@@ -154,6 +183,8 @@ public class UserService {
                 .year(user.getYear())
                 .month(user.getMonth())
                 .date(user.getDate())
+                .accessToken(null) // 기본값은 null
+                .refreshToken(null) // 기본값은 null
                 .build();
     }
 }
