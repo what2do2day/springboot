@@ -132,6 +132,18 @@ public class UserProfileService {
     }
 
     /**
+     * 사용자 ID로 커플의 user1, user2 UserProfile만 반환합니다.
+     * @param userId 사용자 ID
+     * @return CoupleProfile (user1, user2 UserProfile만 포함)
+     */
+    public CoupleProfile getCoupleUserProfilesByUserId(String userId) {
+        // 기존 getCoupleProfileByUserId 활용
+        CoupleProfile coupleProfile = getCoupleProfileByUserId(userId);
+        // 취향벡터 등은 포함하지 않으므로 그대로 반환
+        return coupleProfile;
+    }
+
+    /**
      * 기본 사용자 프로필 정보를 반환합니다.
      * user-couple-service에 접근할 수 없을 때 사용됩니다.
      * 

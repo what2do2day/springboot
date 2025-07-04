@@ -3,6 +3,7 @@ package com.couple.schedule_meeting.controller;
 import com.couple.schedule_meeting.dto.ScheduleCreateRequest;
 import com.couple.schedule_meeting.dto.ScheduleResponse;
 import com.couple.schedule_meeting.dto.ScheduleUpdateRequest;
+import com.couple.schedule_meeting.dto.ScheduleCalendarResponse;
 import com.couple.schedule_meeting.entity.Schedule;
 import com.couple.schedule_meeting.service.ScheduleService;
 import lombok.RequiredArgsConstructor;
@@ -59,5 +60,14 @@ public class ScheduleController {
         UUID coupleUuid = UUID.fromString(coupleId);
         scheduleService.deleteSchedule(scheduleUuid, coupleUuid);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/calendar")
+    public ResponseEntity<ScheduleCalendarResponse> getCalendar(
+            @RequestParam("couple-id") String coupleId,
+            @RequestParam("year") int year,
+            @RequestParam("month") int month) {
+        ScheduleCalendarResponse response = scheduleService.getCalendar(UUID.fromString(coupleId), year, month);
+        return ResponseEntity.ok(response);
     }
 }
