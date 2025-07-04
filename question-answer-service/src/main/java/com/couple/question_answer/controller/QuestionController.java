@@ -4,9 +4,7 @@ import com.couple.common.dto.ApiResponse;
 import com.couple.question_answer.dto.QuestionRequest;
 import com.couple.question_answer.dto.QuestionResponse;
 import com.couple.question_answer.service.QuestionService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,13 +21,12 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/questions")
 @RequiredArgsConstructor
-@Tag(name = "Question", description = "질문 관련 API")
+
 public class QuestionController {
 
     private final QuestionService questionService;
 
     @PostMapping
-    @Operation(summary = "질문 생성", description = "새로운 질문을 생성합니다.")
     public ResponseEntity<ApiResponse<QuestionResponse>> createQuestion(
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId,
@@ -42,7 +39,6 @@ public class QuestionController {
     }
 
     @GetMapping
-    @Operation(summary = "전체 질문 조회", description = "모든 질문을 조회합니다.")
     public ResponseEntity<ApiResponse<List<QuestionResponse>>> getAllQuestions(
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
@@ -53,9 +49,8 @@ public class QuestionController {
     }
 
     @GetMapping("/{questionId}")
-    @Operation(summary = "질문 상세 조회", description = "특정 질문의 상세 정보를 조회합니다.")
     public ResponseEntity<ApiResponse<QuestionResponse>> getQuestionById(
-            @Parameter(description = "질문 ID") @PathVariable UUID questionId,
+            @PathVariable UUID questionId,
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
         log.info("질문 상세 조회 - userId: {}, coupleId: {}, questionId: {}", userId, coupleId, questionId);
@@ -65,9 +60,8 @@ public class QuestionController {
     }
 
     @GetMapping("/date/{date}")
-    @Operation(summary = "날짜별 질문 조회", description = "특정 날짜의 질문들을 조회합니다.")
     public ResponseEntity<ApiResponse<List<QuestionResponse>>> getQuestionsByDate(
-            @Parameter(description = "날짜 (yyyy-MM-dd)") @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
+            @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
         log.info("날짜별 질문 조회 - userId: {}, coupleId: {}, date: {}", userId, coupleId, date);
@@ -77,9 +71,8 @@ public class QuestionController {
     }
 
     @GetMapping("/unsent/{date}")
-    @Operation(summary = "미전송 질문 조회", description = "특정 날짜의 미전송 질문들을 조회합니다.")
     public ResponseEntity<ApiResponse<List<QuestionResponse>>> getUnsentQuestionsByDate(
-            @Parameter(description = "날짜 (yyyy-MM-dd)") @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
+            @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
         log.info("미전송 질문 조회 - userId: {}, coupleId: {}, date: {}", userId, coupleId, date);
@@ -89,9 +82,8 @@ public class QuestionController {
     }
 
     @PutMapping("/{questionId}/mark-sent")
-    @Operation(summary = "질문 전송 완료 처리", description = "질문을 전송 완료 상태로 변경합니다.")
     public ResponseEntity<ApiResponse<String>> markQuestionAsSent(
-            @Parameter(description = "질문 ID") @PathVariable UUID questionId,
+            @PathVariable UUID questionId,
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
         log.info("질문 전송 완료 처리 - userId: {}, coupleId: {}, questionId: {}", userId, coupleId, questionId);
@@ -101,7 +93,6 @@ public class QuestionController {
     }
 
     @GetMapping("/test-headers")
-    @Operation(summary = "헤더 테스트", description = "전달된 헤더 정보를 확인합니다.")
     public ResponseEntity<ApiResponse<String>> testHeaders(
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {

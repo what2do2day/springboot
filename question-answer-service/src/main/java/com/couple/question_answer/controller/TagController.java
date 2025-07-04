@@ -3,7 +3,7 @@ package com.couple.question_answer.controller;
 import com.couple.common.dto.ApiResponse;
 import com.couple.question_answer.entity.Tag;
 import com.couple.question_answer.repository.TagRepository;
-import io.swagger.v3.oas.annotations.Operation;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -17,13 +17,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tags")
 @RequiredArgsConstructor
-@io.swagger.v3.oas.annotations.tags.Tag(name = "Tag", description = "태그 관련 API")
+
 public class TagController {
 
     private final TagRepository tagRepository;
 
     @GetMapping
-    @Operation(summary = "전체 태그 조회", description = "모든 태그를 조회합니다.")
     public ResponseEntity<ApiResponse<List<Tag>>> getAllTags() {
         log.info("전체 태그 조회 요청");
 

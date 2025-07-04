@@ -31,7 +31,7 @@ spring:
         - id: question-answer-service
           uri: http://localhost:8086
           predicates:
-            - Path=/api/questions/**, /api/user-answers/**, /api/user-tag-profiles/**, /api/tags/**
+            - Path=/api/questions/**, /api/user-answers/**, /api/user-tag-profiles/**, /api/tags/**, /api/user-vectors/**
           filters:
             - name: JwtAuthenticationFilter
   security:
