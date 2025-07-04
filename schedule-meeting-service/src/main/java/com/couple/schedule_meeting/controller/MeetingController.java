@@ -34,8 +34,8 @@ public class MeetingController {
     @PostMapping("/recommend")
     public ResponseEntity<String> recommendCourse(
             @RequestBody MeetingCourseRecommendRequest request,
-            @RequestHeader("user_id") String userId,
-            @RequestHeader("couple_id") String coupleId) {
+            @RequestHeader("X-User-ID") String userId,
+            @RequestHeader("X-Couple-ID") String coupleId) {
         
         try {
             // 통합 서비스를 사용하여 데이트 코스 추천 및 저장
