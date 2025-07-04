@@ -85,11 +85,9 @@ public class MeetingSaveService {
      */
     private void saveRouteFromTmpMeeting(TmpMeeting tmpMeeting, UUID meetingId) {
         if (tmpMeeting.getResults() != null && tmpMeeting.getResults().getRoutes() != null) {
-            WaypointRouteResponse routeResponse = (WaypointRouteResponse) tmpMeeting.getResults().getRoutes();
-            
+            // routes 값을 그대로 저장
             Route route = Route.builder()
-                    .segments(convertToRouteSegments(routeResponse))
-                    .summary(convertToRouteSummary(routeResponse))
+                    .routes(tmpMeeting.getResults().getRoutes())
                     .build();
             
             Route savedRoute = routeRepository.save(route);
@@ -133,71 +131,5 @@ public class MeetingSaveService {
         }
     }
     
-    /**
-     * WaypointRouteResponse를 RouteSegment로 변환
-     */
-    private List<Route.RouteSegment> convertToRouteSegments(WaypointRouteResponse routeResponse) {
-        // 실제 구현에서는 WaypointRouteResponse의 구조에 맞게 변환 로직 구현
-        // 여기서는 기본 구조만 제공
-        return routeResponse.getSegments().stream()
-                .map(segment -> Route.RouteSegment.builder()
-                        .sequence(segment.getSequence())
-                        .fromName(segment.getFromName())
-                        .toName(segment.getToName())
-                        .fromLon(segment.getFromLon())
-                        .fromLat(segment.getFromLat())
-                        .toLon(segment.getToLon())
-                        .toLat(segment.getToLat())
-                        .totalTime(segment.getTotalTime())
-                        .totalDistance(segment.getTotalDistance())
-                        .totalFare(segment.getTotalFare())
-                        .totalWalkTime(segment.getTotalWalkTime())
-                        .transferCount(segment.getTransferCount())
-                        .routeType(segment.getRouteType())
-                        .legs(convertToRouteLegs(segment.getLegs()))
-                        .build())
-                .collect(Collectors.toList());
-    }
-    
-    /**
-     * WaypointRouteResponse의 Leg를 RouteLeg로 변환
-     */
-    private List<Route.RouteLeg> convertToRouteLegs(List<WaypointRouteResponse.Leg> legs) {
-        // 실제 구현에서는 WaypointRouteResponse.Leg의 구조에 맞게 변환 로직 구현
-        return legs.stream()
-                .map(leg -> Route.RouteLeg.builder()
-                        .mode(leg.getMode())
-                        .sectionTime(leg.getSectionTime())
-                        .distance(leg.getDistance())
-                        .start(convertToLocation(leg.getStart()))
-                        .end(convertToLocation(leg.getEnd()))
-                        .build())
-                .collect(Collectors.toList());
-    }
-    
-    /**
-     * WaypointRouteResponse의 Location을 Route.Location으로 변환
-     */
-    private Route.Location convertToLocation(WaypointRouteResponse.Location location) {
-        return Route.Location.builder()
-                .name(location.getName())
-                .lon(location.getLon())
-                .lat(location.getLat())
-                .build();
-    }
-    
-    /**
-     * WaypointRouteResponse를 RouteSummary로 변환
-     */
-    private Route.RouteSummary convertToRouteSummary(WaypointRouteResponse routeResponse) {
-        return Route.RouteSummary.builder()
-                .totalTime(routeResponse.getSummary().getTotalTime())
-                .totalDistance(routeResponse.getSummary().getTotalDistance())
-                .totalFare(routeResponse.getSummary().getTotalFare())
-                .totalWalkTime(routeResponse.getSummary().getTotalWalkTime())
-                .totalTransferCount(routeResponse.getSummary().getTotalTransferCount())
-                .segmentCount(routeResponse.getSummary().getSegmentCount())
-                .waypointNames(routeResponse.getSummary().getWaypointNames())
-                .build();
-    }
+
 } 

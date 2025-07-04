@@ -19,8 +19,7 @@ public class Route {
     @Id
     private String id;
     
-    private List<RouteSegment> segments;
-    private RouteSummary summary;
+    private Object routes; // TmpMeeting의 routes 값을 그대로 저장
     
     @Data
     @Builder

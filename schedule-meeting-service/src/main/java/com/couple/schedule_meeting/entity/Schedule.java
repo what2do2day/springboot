@@ -34,12 +34,16 @@ public class Schedule {
     @Column(name = "dateTime", nullable = false)
     private LocalDateTime dateTime;
 
-    @Column(name = "year", insertable = false, updatable = false, columnDefinition = "EXTRACT(YEAR FROM dateTime)")
+    @Column(name = "year", insertable = false, updatable = false,
+            columnDefinition = "INTEGER GENERATED ALWAYS AS (EXTRACT(YEAR FROM date_time)) STORED")
     private Integer year;
 
-    @Column(name = "month", insertable = false, updatable = false, columnDefinition = "EXTRACT(MONTH FROM dateTime)")
+    @Column(name = "month", insertable = false, updatable = false,
+            columnDefinition = "INTEGER GENERATED ALWAYS AS (EXTRACT(MONTH FROM date_time)) STORED")
     private Integer month;
 
-    @Column(name = "date", insertable = false, updatable = false, columnDefinition = "EXTRACT(DAY FROM dateTime)")
+    @Column(name = "date", insertable = false, updatable = false,
+            columnDefinition = "INTEGER GENERATED ALWAYS AS (EXTRACT(DAY FROM date_time)) STORED")
     private Integer day;
+
 } 
