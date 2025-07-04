@@ -5,6 +5,8 @@ import com.couple.user_couple.dto.CoupleMatchRequest;
 import com.couple.user_couple.dto.CoupleMatchAcceptRequest;
 import com.couple.user_couple.dto.CoupleResponse;
 import com.couple.user_couple.dto.HomeInfoResponse;
+import com.couple.user_couple.dto.CoupleMembersRequest;
+import com.couple.user_couple.dto.CoupleMemberResponse;
 import com.couple.user_couple.entity.Couple;
 import com.couple.user_couple.entity.User;
 import com.couple.user_couple.repository.CoupleRepository;
@@ -19,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -230,6 +233,35 @@ public class CoupleService {
                                 .expiredAt(couple.getExpiredAt())
                                 .expired(couple.getExpired())
                                 .daysSinceStart(daysSinceStart)
+                                .build();
+        }
+
+        public List<CoupleMemberResponse> getCoupleMembers(CoupleMembersRequest request) {
+                log.info("커플 멤버 정보 조회: {}", request.getUserId());
+
+                // 사용자 확인
+                User user = userRepository.findById(request.getUserId())
+                                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + request.getUserId()));
+
+                // 커플 확인
+                if (user.getCoupleId() == null) {
+                        throw new RuntimeException("커플이 없는 사용자입니다.");
+                }
+
+                // 커플에 속한 모든 유저 조회
+                List<User> users = userRepository.findByCoupleId(user.getCoupleId());
+
+                // DTO로 변환
+                return users.stream()
+                                .map(this::convertToCoupleMemberResponse)
+                                .collect(java.util.stream.Collectors.toList());
+        }
+
+        private CoupleMemberResponse convertToCoupleMemberResponse(User user) {
+                return CoupleMemberResponse.builder()
+                                .userId(user.getId())
+                                .gender(user.getGender())
+                                .birth(user.getBirth())
                                 .build();
         }
 
