@@ -269,8 +269,9 @@ public class WaypointRouteService {
     
     /**
      * 기존 방식의 Leg로 변환 (호환성)
+     * 현재는 사용하지 않으므로 null 반환
      */
-    private WaypointRouteResponse.Leg convertToLeg(SkTransitDetailedResponseDto.DetailedLeg leg) {
+    private Object convertToLeg(SkTransitDetailedResponseDto.DetailedLeg leg) {
         // 기존 방식의 Leg 구조가 필요하면 여기에 구현
         return null;
     }

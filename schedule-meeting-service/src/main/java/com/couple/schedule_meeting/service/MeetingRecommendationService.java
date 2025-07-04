@@ -1,8 +1,10 @@
 package com.couple.schedule_meeting.service;
 
+import com.couple.schedule_meeting.dto.CoupleInfo;
 import com.couple.schedule_meeting.dto.MeetingCourseRecommendRequest;
 import com.couple.schedule_meeting.dto.RecommendationRequest;
 import com.couple.schedule_meeting.dto.RecommendationResponse;
+import com.couple.schedule_meeting.dto.UserInfo;
 import com.couple.schedule_meeting.dto.WaypointRouteRequest;
 import com.couple.schedule_meeting.dto.WaypointRouteResponse;
 import com.couple.schedule_meeting.entity.TmpMeeting;
@@ -25,6 +27,7 @@ public class MeetingRecommendationService {
     private final RecommendationService recommendationService;
     private final WaypointRouteService waypointRouteService;
     private final TmpMeetingRepository tmpMeetingRepository;
+    private final UserInfoService userInfoService;
 
     /**
      * 데이트 코스 추천 요청을 처리하고 tmp_meetings 문서를 생성하여 저장합니다.
@@ -38,15 +41,22 @@ public class MeetingRecommendationService {
         try {
             log.info("데이트 코스 추천 시작: userId={}, coupleId={}", userId, coupleId);
             
-            // 1. RecommendationRequest 생성
+            // 1. 커플 취향 정보 조회 (기본 정보 + 취향 벡터)
+            log.info("커플 취향 정보 조회 시작");
+                    CoupleInfo coupleInfo = userInfoService.getCoupleInfoByUserId(userId);
+
+        UserInfo user1Info = coupleInfo.getUser1();
+        UserInfo user2Info = coupleInfo.getUser2();
+            
+            // 2. RecommendationRequest 생성
             RecommendationRequest recommendationRequest = RecommendationRequest.builder()
                     .user1(RecommendationRequest.UserInfo.builder()
-                            .gender("M") // TODO: 실제 사용자 정보에서 가져오기
-                            .vector(java.util.Map.of("key1", "value1", "key2", "value2")) // TODO: 실제 벡터 데이터
+                            .gender(user1Info.getGender())
+                            .vector(user1Info.getPreferenceVector())
                             .build())
                     .user2(RecommendationRequest.UserInfo.builder()
-                            .gender("F") // TODO: 실제 사용자 정보에서 가져오기
-                            .vector(java.util.Map.of("key1", "value1", "key2", "value2")) // TODO: 실제 벡터 데이터
+                            .gender(user2Info.getGender())
+                            .vector(user2Info.getPreferenceVector())
                             .build())
                     .date(request.getDate())
                     .weather(request.getWeather())
@@ -55,7 +65,7 @@ public class MeetingRecommendationService {
                     .keywords(request.getKeyword())
                     .build();
             
-            // 2. 외부 추천 API 호출
+            // 3. 외부 추천 API 호출
             log.info("외부 추천 API 호출 시작");
             RecommendationResponse recommendationResponse = recommendationService.getRecommendations(recommendationRequest);
             
@@ -66,10 +76,9 @@ public class MeetingRecommendationService {
             
             log.info("추천 API 응답 성공: {}개 timeSlot", recommendationResponse.getTimeSlots().size());
             
-            // 3. 위도/경도 리스트 생성
+            // 4. 위도/경도 리스트 생성
             log.info("위도/경도 리스트 생성 시작");
-            List<RecommendationService.LocationCoordinate> coordinates = 
-                    recommendationService.getLocationCoordinates(recommendationResponse);
+            List<RecommendationService.LocationCoordinate> coordinates = recommendationService.getLocationCoordinates(recommendationResponse);
             
             if (coordinates == null || coordinates.isEmpty()) {
                 log.error("위도/경도 리스트가 비어있습니다.");
@@ -78,7 +87,7 @@ public class MeetingRecommendationService {
             
             log.info("위도/경도 리스트 생성 완료: {}개 장소", coordinates.size());
             
-            // 4. 상세 경로 생성
+            // 5. 상세 경로 생성
             log.info("상세 경로 생성 시작");
             WaypointRouteRequest waypointRequest = WaypointRouteRequest.builder()
                     .waypoints(coordinates.stream()
@@ -100,7 +109,7 @@ public class MeetingRecommendationService {
             
             log.info("상세 경로 생성 완료: {}개 segment", routeResponse.getSegments().size());
             
-            // 5. TmpMeeting 문서 생성
+            // 6. TmpMeeting 문서 생성
             TmpMeeting.MeetingResults results = TmpMeeting.MeetingResults.builder()
                     .timeSlots(convertToTimeSlots(recommendationResponse.getTimeSlots()))
                     .routes(routeResponse) // routes는 별도 컬렉션에 저장하거나 여기에 포함
@@ -115,7 +124,7 @@ public class MeetingRecommendationService {
                     .results(results)
                     .build();
             
-            // 6. MongoDB에 저장
+            // 7. MongoDB에 저장
             log.info("MongoDB 저장 시작");
             TmpMeeting savedMeeting = tmpMeetingRepository.save(tmpMeeting);
             

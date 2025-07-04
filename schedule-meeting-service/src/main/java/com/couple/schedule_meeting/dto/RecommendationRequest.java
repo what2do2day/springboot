@@ -30,6 +30,6 @@ public class RecommendationRequest {
     @AllArgsConstructor
     public static class UserInfo {
         private String gender;
-        private Map<String, String> vector;
+        private Map<String, Double> vector;
     }
 } 
