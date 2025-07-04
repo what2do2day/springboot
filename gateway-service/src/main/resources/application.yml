@@ -6,6 +6,16 @@ spring:
     web-application-type: reactive
   application:
     name: gateway-service
+  cloud:
+    gateway:
+      routes:
+        - id: django-websocket
+          uri: ws://localhost:8000
+          predicates:
+            - Path=/ws/**
+          filters:
+            - RewritePath=/ws/(?<segment>.*), /ws/
+            - name: WebSocketAuthFilter
   security:
     # OAuth2 설정 제거 - Gateway에서는 JWT 인증만 사용
 

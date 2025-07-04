@@ -87,6 +87,9 @@ public class UserService {
             String accessToken = jwtTokenProvider.generateToken(user.getId(), user.getCoupleId());
             String refreshToken = "refresh_token_" + user.getId() + "_" + System.currentTimeMillis();
 
+            log.info("생성된 AccessToken: {}", accessToken);
+            log.info("생성된 RefreshToken: {}", refreshToken);
+
             UserToken userToken = UserToken.builder()
                     .userId(user.getId())
                     .accessToken(accessToken)
