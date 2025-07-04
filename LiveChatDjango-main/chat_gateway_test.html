@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게이트웨이 채팅 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .left-panel {
+            flex: 1;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .right-panel {
+            flex: 2;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .message {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 5px;
+            max-width: 70%;
+        }
+
+        .message.sent {
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.received {
+            background-color: #e9ecef;
+            color: black;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-container input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        .input-container button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .input-container button:hover {
+            background-color: #0056b3;
+        }
+
+        .input-container button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .status.connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status.disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background-color: #218838;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+
+        .log-container {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .user-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>게이트웨이 기반 실시간 채팅 테스트</h1>
+    <p><em>게이트웨이에서 유저 정보를 전달받아 채팅하는 테스트</em></p>
+
+    <div class="container">
+        <div class="left-panel">
+            <h3>유저 정보 설정</h3>
+
+            <div class="form-group">
+                <label for="userId">사용자 ID:</label>
+                <input type="text" id="userId" value="123" placeholder="사용자 ID">
+            </div>
+
+            <div class="form-group">
+                <label for="nickname">닉네임:</label>
+                <input type="text" id="nickname" value="테스트유저" placeholder="닉네임">
+            </div>
+
+            <div class="form-group">
+                <label for="email">이메일:</label>
+                <input type="email" id="email" value="test@example.com" placeholder="이메일">
+            </div>
+
+            <div class="form-group">
+                <label for="profileUrl">프로필 URL:</label>
+                <input type="text" id="profileUrl" value="/media/default.jpg" placeholder="프로필 이미지 URL">
+            </div>
+
+            <div class="form-group">
+                <label for="roomId">채팅방 ID:</label>
+                <input type="number" id="roomId" value="1" min="1">
+            </div>
+
+            <div class="form-group">
+                <label for="serverUrl">채팅 서버 URL:</label>
+                <input type="text" id="serverUrl" value="http://127.0.0.1:8000">
+            </div>
+
+            <button class="btn" onclick="connectToChat()">채팅 연결</button>
+            <button class="btn btn-secondary" onclick="createRoom()">채팅방 생성</button>
+            <button class="btn btn-secondary" onclick="getRooms()">채팅방 목록</button>
+
+            <div class="user-info">
+                <h4>현재 설정된 유저 정보</h4>
+                <div id="currentUserInfo"></div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <h3>채팅</h3>
+            <div id="status" class="status disconnected">연결되지 않음</div>
+
+            <div class="chat-container" id="chatContainer">
+                <div class="message received">채팅방에 오신 것을 환영합니다!</div>
+            </div>
+
+            <div class="input-container">
+                <input type="text" id="messageInput" placeholder="메시지를 입력하세요..." disabled>
+                <button onclick="sendMessage()" disabled id="sendButton">전송</button>
+            </div>
+
+            <h4>로그</h4>
+            <div class="log-container" id="logContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentUser = null;
+        let serverUrl = 'http://127.0.0.1:8000';
+
+        function log(message) {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            logContainer.innerHTML += `[${timestamp}] ${message}\n`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function updateStatus(status, isConnected) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = status;
+            statusDiv.className = `status ${isConnected ? 'connected' : 'disconnected'}`;
+        }
+
+        function updateUserInfo() {
+            const userId = document.getElementById('userId').value;
+            const nickname = document.getElementById('nickname').value;
+            const email = document.getElementById('email').value;
+            const profileUrl = document.getElementById('profileUrl').value;
+
+            document.getElementById('currentUserInfo').innerHTML = `
+                <p><strong>사용자 ID:</strong> ${userId}</p>
+                <p><strong>닉네임:</strong> ${nickname}</p>
+                <p><strong>이메일:</strong> ${email}</p>
+                <p><strong>프로필:</strong> ${profileUrl}</p>
+            `;
+        }
+
+        async function createRoom() {
+            const roomName = prompt('채팅방 이름을 입력하세요:', '새로운 채팅방');
+            if (!roomName) return;
+
+            try {
+                log('채팅방 생성 중...');
+                const response = await fetch(`${serverUrl}/chat/v1/create-room/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: roomName,
+                        post_id: 1
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`채팅방 생성 성공: ${data.name} (ID: ${data.id})`);
+                    document.getElementById('roomId').value = data.id;
+                    alert(`채팅방이 생성되었습니다. ID: ${data.id}`);
+                } else {
+                    const errorData = await response.json();
+                    log(`채팅방 생성 실패: ${JSON.stringify(errorData)}`);
+                    alert(`채팅방 생성 실패: ${JSON.stringify(errorData)}`);
+                }
+            } catch (error) {
+                log(`채팅방 생성 오류: ${error.message}`);
+                alert(`채팅방 생성 오류: ${error.message}`);
+            }
+        }
+
+        async function getRooms() {
+            try {
+                log('채팅방 목록 조회 중...');
+                const response = await fetch(`${serverUrl}/chat/v1/rooms/`);
+
+                if (response.ok) {
+                    const rooms = await response.json();
+                    log(`채팅방 목록: ${rooms.length}개`);
+                    rooms.forEach(room => {
+                        log(`- ${room.name} (ID: ${room.id})`);
+                    });
+                } else {
+                    log(`채팅방 목록 조회 실패: ${response.status}`);
+                }
+            } catch (error) {
+                log(`채팅방 목록 조회 오류: ${error.message}`);
+            }
+        }
+
+        function connectToChat() {
+            const userId = document.getElementById('userId').value.trim();
+            const nickname = document.getElementById('nickname').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const profileUrl = document.getElementById('profileUrl').value.trim();
+            const roomId = document.getElementById('roomId').value;
+            serverUrl = document.getElementById('serverUrl').value.trim();
+
+            if (!userId || !nickname || !email || !roomId) {
+                alert('모든 필수 정보를 입력해주세요.');
+                return;
+            }
+
+            currentUser = {
+                user_id: userId,
+                nickname: nickname,
+                email: email,
+                profile_url: profileUrl
+            };
+
+            // WebSocket 연결 (게이트웨이에서 전달받은 유저 정보를 쿼리로 전달)
+            const wsUrl = `ws://127.0.0.1:8000/ws/chat/${roomId}/chat/?user_id=${encodeURIComponent(userId)}&nickname=${encodeURIComponent(nickname)}&email=${encodeURIComponent(email)}&profile_url=${encodeURIComponent(profileUrl)}`;
+            log(`WebSocket 연결 시도: ${wsUrl}`);
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function (event) {
+                log('WebSocket 연결 성공');
+                updateStatus('연결됨', true);
+                document.getElementById('messageInput').disabled = false;
+                document.getElementById('sendButton').disabled = false;
+            };
+
+            ws.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+                log(`메시지 수신: ${JSON.stringify(data)}`);
+
+                if (data.type === 'chat.message') {
+                    addMessage(data.message, data.sender, data.sender === currentUser.email);
+                } else if (data.type === 'chat.user.join') {
+                    addSystemMessage(`${data.username}님이 입장했습니다.`);
+                } else if (data.type === 'chat.user.leave') {
+                    addSystemMessage(`${data.username}님이 퇴장했습니다.`);
+                }
+            };
+
+            ws.onclose = function (event) {
+                log(`WebSocket 연결 종료 (코드: ${event.code})`);
+                updateStatus('연결 종료', false);
+                document.getElementById('messageInput').disabled = true;
+                document.getElementById('sendButton').disabled = true;
+
+                if (event.code === 4001) {
+                    alert('유저 정보가 제공되지 않았습니다.');
+                } else if (event.code === 4003) {
+                    alert('채팅방을 찾을 수 없습니다.');
+                }
+            };
+
+            ws.onerror = function (error) {
+                log(`WebSocket 오류: ${error}`);
+                updateStatus('연결 오류', false);
+            };
+        }
+
+        function sendMessage() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('WebSocket이 연결되지 않았습니다.');
+                return;
+            }
+
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+
+            if (message) {
+                const messageData = {
+                    type: 'chat.message',
+                    message: message
+                };
+
+                ws.send(JSON.stringify(messageData));
+                log(`메시지 전송: ${message}`);
+                messageInput.value = '';
+            }
+        }
+
+        function addMessage(message, sender, isSent) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+            messageDiv.textContent = `${isSent ? '나' : sender}: ${message}`;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function addSystemMessage(message) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message received';
+            messageDiv.style.textAlign = 'center';
+            messageDiv.style.fontStyle = 'italic';
+            messageDiv.style.color = '#666';
+            messageDiv.textContent = message;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Enter 키로 메시지 전송
+        document.getElementById('messageInput').addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // 입력 필드 변경 시 유저 정보 업데이트
+        document.getElementById('userId').addEventListener('input', updateUserInfo);
+        document.getElementById('nickname').addEventListener('input', updateUserInfo);
+        document.getElementById('email').addEventListener('input', updateUserInfo);
+        document.getElementById('profileUrl').addEventListener('input', updateUserInfo);
+
+        // 페이지 로드 시 초기화
+        window.onload = function () {
+            log('게이트웨이 채팅 테스트 페이지 로드됨');
+            updateUserInfo();
+        };
+    </script>
+</body>
+
+</html>
