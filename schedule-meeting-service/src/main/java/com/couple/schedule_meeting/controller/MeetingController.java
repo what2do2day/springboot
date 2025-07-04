@@ -1,6 +1,7 @@
 package com.couple.schedule_meeting.controller;
 
 import com.couple.schedule_meeting.dto.MeetingResponse;
+import com.couple.schedule_meeting.dto.MeetingRecommendResponse;
 import com.couple.schedule_meeting.service.MeetingService;
 import com.couple.schedule_meeting.service.WeatherCardService;
 import com.couple.schedule_meeting.service.MeetingRecommendationService;
@@ -40,20 +41,33 @@ public class MeetingController {
     }
 
     @PostMapping("/recommend")
-    public ResponseEntity<String> recommendCourse(
+    public ResponseEntity<MeetingRecommendResponse> recommendCourse(
             @RequestBody MeetingCourseRecommendRequest request,
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader("X-Couple-ID") String coupleId) {
         
         try {
             // 통합 서비스를 사용하여 데이트 코스 추천 및 저장
-            String documentId = meetingRecommendationService.createMeetingRecommendation(request, userId, coupleId);
+            Object tmpMeeting = meetingRecommendationService.createMeetingRecommendation(request, userId, coupleId);
             
-            return ResponseEntity.ok("데이트 코스 추천이 완료되었습니다. Document ID: " + documentId);
+            MeetingRecommendResponse response = MeetingRecommendResponse.builder()
+                    .documentId(tmpMeeting.toString())
+                    .message("데이트 코스 추천이 완료되었습니다.")
+                    .value(tmpMeeting)
+                    .build();
+            
+            return ResponseEntity.ok(response);
             
         } catch (Exception e) {
             log.error("데이트 코스 추천 처리 중 오류: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body("데이트 코스 추천 처리 중 오류가 발생했습니다.");
+            
+            MeetingRecommendResponse errorResponse = MeetingRecommendResponse.builder()
+                    .documentId(null)
+                    .message("데이트 코스 추천 처리 중 오류가 발생했습니다.")
+                    .value(null)
+                    .build();
+            
+            return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
     

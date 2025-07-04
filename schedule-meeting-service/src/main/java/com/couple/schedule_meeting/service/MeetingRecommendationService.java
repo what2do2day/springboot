@@ -35,9 +35,9 @@ public class MeetingRecommendationService {
      * @param request 데이트 코스 추천 요청
      * @param userId 사용자 ID
      * @param coupleId 커플 ID
-     * @return 생성된 TmpMeeting 문서 ID
+     * @return 생성된 TmpMeeting 문서
      */
-    public String createMeetingRecommendation(MeetingCourseRecommendRequest request, String userId, String coupleId) {
+    public TmpMeeting createMeetingRecommendation(MeetingCourseRecommendRequest request, String userId, String coupleId) {
         try {
             log.info("데이트 코스 추천 시작: userId={}, coupleId={}", userId, coupleId);
             
@@ -135,7 +135,7 @@ public class MeetingRecommendationService {
             TmpMeeting savedMeeting = tmpMeetingRepository.save(tmpMeeting);
             
             log.info("데이트 코스 추천 완료: documentId={}", savedMeeting.getId());
-            return savedMeeting.getId();
+            return savedMeeting;
             
         } catch (Exception e) {
             log.error("데이트 코스 추천 처리 중 오류 발생: {}", e.getMessage(), e);
