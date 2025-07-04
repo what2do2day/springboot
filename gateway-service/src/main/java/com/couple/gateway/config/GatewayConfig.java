@@ -40,8 +40,6 @@ public class GatewayConfig {
                                                                 .rewritePath("/api/(?<segment>.*)", "/api/${segment}")
                                                                 .addRequestHeader("X-Response-Time",
                                                                                 System.currentTimeMillis() + "")
-                                                                .addRequestHeader("X-User-ID", "${X-User-ID}")
-                                                                .addRequestHeader("X-Couple-ID", "${X-Couple-ID}")
                                                                 .filter(jwtFilter.apply(
                                                                                 new JwtAuthenticationFilter.Config())))
                                                 .uri("http://localhost:8082"))
