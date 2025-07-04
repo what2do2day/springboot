@@ -5,12 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CoupleMatchRequest {
-
-    private String name;
-    private java.time.LocalDate startDate;
+public class CoupleMembersRequest {
+    private UUID userId;
 }

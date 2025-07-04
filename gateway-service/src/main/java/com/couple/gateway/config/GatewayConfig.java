@@ -9,12 +9,14 @@ import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.client.RestTemplate;
 import com.couple.gateway.filter.JwtAuthenticationFilter;
+import com.couple.gateway.filter.WebSocketAuthFilter;
 
 @Configuration
 public class GatewayConfig {
 
         @Bean
-        public RouteLocator customRouteLocator(RouteLocatorBuilder builder, JwtAuthenticationFilter jwtFilter) {
+        public RouteLocator customRouteLocator(RouteLocatorBuilder builder, JwtAuthenticationFilter jwtFilter,
+                        WebSocketAuthFilter webSocketAuthFilter) {
                 return builder.routes()
                                 .route("user-couple-service-public", r -> r
                                                 .path("/api/users/signup", "/api/users/login")
@@ -41,20 +43,24 @@ public class GatewayConfig {
                                                                 .filter(jwtFilter.apply(
                                                                                 new JwtAuthenticationFilter.Config())))
                                                 .uri("http://localhost:8082"))
-                                .route("chat-push-service", r -> r
+                                .route("django-chat-service", r -> r
                                                 .path("/api/chat/**", "/api/push/**", "/api/questions/**")
                                                 .filters(f -> f
                                                                 .rewritePath("/api/(?<segment>.*)", "/api/${segment}")
                                                                 .addRequestHeader("X-Response-Time",
                                                                                 System.currentTimeMillis() + "")
+                                                                .addRequestHeader("X-User-ID", "${X-User-ID}")
+                                                                .addRequestHeader("X-Couple-ID", "${X-Couple-ID}")
                                                                 .filter(jwtFilter.apply(
                                                                                 new JwtAuthenticationFilter.Config())))
-                                                .uri("http://localhost:8083"))
-                                .route("websocket", r -> r
+                                                .uri("http://localhost:8000"))
+                                .route("django-websocket", r -> r
                                                 .path("/ws/**")
                                                 .filters(f -> f
-                                                                .rewritePath("/ws/(?<segment>.*)", "/${segment}"))
-                                                .uri("ws://localhost:8083"))
+                                                                .rewritePath("/ws/(?<segment>.*)", "/ws/${segment}")
+                                                                .filter(webSocketAuthFilter.apply(
+                                                                                new WebSocketAuthFilter.Config())))
+                                                .uri("ws://localhost:8000"))
                                 .build();
         }
 

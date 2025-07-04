@@ -6,6 +6,8 @@ import com.couple.user_couple.dto.CoupleMatchRequest;
 import com.couple.user_couple.dto.CoupleMatchAcceptRequest;
 import com.couple.user_couple.dto.CoupleResponse;
 import com.couple.user_couple.dto.HomeInfoResponse;
+import com.couple.user_couple.dto.CoupleMembersRequest;
+import com.couple.user_couple.dto.CoupleMemberResponse;
 import com.couple.user_couple.service.CoupleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -88,5 +91,13 @@ public class CoupleController {
 
         coupleService.setCoupleDate(UUID.fromString(userId), request);
         return ResponseEntity.ok(ApiResponse.success("커플 날짜가 설정되었습니다.", null));
+    }
+
+    @PostMapping("/members")
+    @Operation(summary = "커플 멤버 정보 조회", description = "해당 유저가 속한 커플의 모든 멤버 정보를 조회합니다.")
+    public ResponseEntity<List<CoupleMemberResponse>> getCoupleMembers(@RequestBody CoupleMembersRequest request) {
+        log.info("커플 멤버 정보 조회 API 호출: {}", request.getUserId());
+        List<CoupleMemberResponse> members = coupleService.getCoupleMembers(request);
+        return ResponseEntity.ok(members);
     }
 }

@@ -28,8 +28,9 @@ public class Couple {
     @Column(name = "name", length = 50)
     private String name;
 
-    @Column(name = "character_id", length = 50)
-    private String characterId;
+    @Column(name = "character_id", length = 50, columnDefinition = "varchar(50) default 'C000'")
+    @Builder.Default
+    private String characterId = "C000";
 
     @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;
@@ -52,6 +53,10 @@ public class Couple {
     @Column(name = "expired", length = 1)
     @Builder.Default
     private String expired = "N";
+
+    @Column(name = "total_scores", nullable = false)
+    @Builder.Default
+    private Long totalScores = 0L;
 
     @OneToMany(mappedBy = "couple", fetch = FetchType.LAZY)
     private List<User> users;
