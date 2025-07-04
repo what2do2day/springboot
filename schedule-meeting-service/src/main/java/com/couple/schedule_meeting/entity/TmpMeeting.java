@@ -27,6 +27,7 @@ public class TmpMeeting {
     private LocalDate date;
     private List<String> keyword;
     private MeetingResults results;
+    private List<String> stores;
     
     @Data
     @Builder

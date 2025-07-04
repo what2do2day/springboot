@@ -2,7 +2,9 @@ package com.couple.schedule_meeting.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.GenericGenerator;
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Entity
 @Table(name = "places")
@@ -12,9 +14,10 @@ import java.math.BigDecimal;
 @Builder
 public class Place {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
     @Column(name = "id", updatable = false, nullable = false)
-    private Long id;
+    private UUID id;
 
     @Column(name = "name", length = 50, nullable = false)
     private String name;

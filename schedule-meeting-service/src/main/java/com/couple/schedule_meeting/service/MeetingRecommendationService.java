@@ -76,7 +76,12 @@ public class MeetingRecommendationService {
             
             log.info("추천 API 응답 성공: {}개 timeSlot", recommendationResponse.getTimeSlots().size());
             
-            // 4. 위도/경도 리스트 생성
+            // 4. 1순위 스토어들의 이름 추출
+            log.info("1순위 스토어 이름 추출 시작");
+            List<String> topStores = extractTopStores(recommendationResponse);
+            log.info("1순위 스토어 추출 완료: {}개 스토어", topStores.size());
+            
+            // 5. 위도/경도 리스트 생성
             log.info("위도/경도 리스트 생성 시작");
             List<RecommendationService.LocationCoordinate> coordinates = recommendationService.getLocationCoordinates(recommendationResponse);
             
@@ -87,7 +92,7 @@ public class MeetingRecommendationService {
             
             log.info("위도/경도 리스트 생성 완료: {}개 장소", coordinates.size());
             
-            // 5. 상세 경로 생성
+            // 6. 상세 경로 생성
             log.info("상세 경로 생성 시작");
             WaypointRouteRequest waypointRequest = WaypointRouteRequest.builder()
                     .waypoints(coordinates.stream()
@@ -109,7 +114,7 @@ public class MeetingRecommendationService {
             
             log.info("상세 경로 생성 완료: {}개 segment", routeResponse.getSegments().size());
             
-            // 6. TmpMeeting 문서 생성
+            // 7. TmpMeeting 문서 생성
             TmpMeeting.MeetingResults results = TmpMeeting.MeetingResults.builder()
                     .timeSlots(convertToTimeSlots(recommendationResponse.getTimeSlots()))
                     .routes(routeResponse) // routes는 별도 컬렉션에 저장하거나 여기에 포함
@@ -122,9 +127,10 @@ public class MeetingRecommendationService {
                     .date(request.getDate())
                     .keyword(request.getKeyword())
                     .results(results)
+                    .stores(topStores) // 1순위 스토어들의 이름 추가
                     .build();
             
-            // 7. MongoDB에 저장
+            // 8. MongoDB에 저장
             log.info("MongoDB 저장 시작");
             TmpMeeting savedMeeting = tmpMeetingRepository.save(tmpMeeting);
             
@@ -135,6 +141,17 @@ public class MeetingRecommendationService {
             log.error("데이트 코스 추천 처리 중 오류 발생: {}", e.getMessage(), e);
             throw new RuntimeException("데이트 코스 추천 처리 실패", e);
         }
+    }
+    
+    /**
+     * RecommendationResponse에서 1순위 스토어들의 이름을 추출
+     */
+    private List<String> extractTopStores(RecommendationResponse recommendationResponse) {
+        return recommendationResponse.getTimeSlots().stream()
+                .flatMap(timeSlot -> timeSlot.getTopCandidates().stream())
+                .map(candidate -> candidate.getStoreName())
+                .distinct()
+                .collect(Collectors.toList());
     }
     
     /**

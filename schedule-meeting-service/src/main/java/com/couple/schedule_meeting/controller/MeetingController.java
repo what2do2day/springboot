@@ -2,6 +2,7 @@ package com.couple.schedule_meeting.controller;
 
 import com.couple.schedule_meeting.service.WeatherCardService;
 import com.couple.schedule_meeting.service.MeetingRecommendationService;
+import com.couple.schedule_meeting.service.MeetingSaveService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,17 +14,20 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.UUID;
 
 import com.couple.schedule_meeting.dto.MeetingCourseRecommendRequest;
+import com.couple.schedule_meeting.dto.MeetingSaveRequest;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
-@RequestMapping("/meetings")
+@RequestMapping("/api/meetings")
 @RequiredArgsConstructor
 public class MeetingController {
     private final WeatherCardService weatherCardService;
     private final MeetingRecommendationService meetingRecommendationService;
+    private final MeetingSaveService meetingSaveService;
 
     @GetMapping("/weather-cards")
     public ResponseEntity<List<WeatherCardService.WeatherCardResponse>> getWeatherCards(@RequestParam float lat, @RequestParam float lon) throws Exception {
@@ -46,6 +50,23 @@ public class MeetingController {
         } catch (Exception e) {
             log.error("데이트 코스 추천 처리 중 오류: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body("데이트 코스 추천 처리 중 오류가 발생했습니다.");
+        }
+    }
+    
+    @PostMapping
+    public ResponseEntity<String> saveMeeting(
+            @RequestBody MeetingSaveRequest request,
+            @RequestHeader("X-Couple-ID") String coupleId) {
+        
+        try {
+            // TmpMeeting 문서를 조회하여 Meeting, MeetingPlaces, MeetingKeywords, Route를 저장
+            UUID meetingId = meetingSaveService.saveMeetingFromTmpMeeting(request.getTmpMeetingId(), UUID.fromString(coupleId));
+            
+            return ResponseEntity.ok("데이트 일정이 성공적으로 저장되었습니다. Meeting ID: " + meetingId);
+            
+        } catch (Exception e) {
+            log.error("데이트 일정 저장 중 오류: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("데이트 일정 저장 중 오류가 발생했습니다.");
         }
     }
 } 
