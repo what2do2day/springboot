@@ -42,7 +42,7 @@ public class Schedule {
             columnDefinition = "INTEGER GENERATED ALWAYS AS (EXTRACT(MONTH FROM date_time)) STORED")
     private Integer month;
 
-    @Column(name = "date", insertable = false, updatable = false,
+    @Column(name = "day", insertable = false, updatable = false,
             columnDefinition = "INTEGER GENERATED ALWAYS AS (EXTRACT(DAY FROM date_time)) STORED")
     private Integer day;
 
