@@ -28,12 +28,15 @@ public class UserAnswer {
     @Column(name = "question_id", nullable = false)
     private UUID questionId;
 
-    @Column(name = "choice", nullable = false, length = 1)
-    private String choice; // '1' or '2'
+    @Column(name = "couple_id", nullable = false)
+    private UUID coupleId;
 
-    @Column(name = "answered_at", nullable = false)
+    @Column(name = "selected_option", nullable = false, length = 1)
+    private String selectedOption; // '1' or '2'
+
+    @Column(name = "created_at", nullable = false)
     @CreationTimestamp
-    private LocalDateTime answeredAt;
+    private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", insertable = false, updatable = false)

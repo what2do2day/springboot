@@ -28,21 +28,22 @@ public class UserAnswerService {
     private final QuestionTagRepository questionTagRepository;
     private final UserTagProfileRepository userTagProfileRepository;
 
-    public UserAnswerResponse submitAnswer(UUID userId, UserAnswerRequest request) {
-        log.info("사용자 답변 제출: userId={}, questionId={}, choice={}",
-                userId, request.getQuestionId(), request.getChoice());
+    public UserAnswerResponse submitAnswer(UUID userId, UUID coupleId, UserAnswerRequest request) {
+        log.info("사용자 답변 제출: userId={}, coupleId={}, questionId={}, selectedOption={}",
+                userId, coupleId, request.getQuestionId(), request.getSelectedOption());
 
         // 답변 저장
         UserAnswer userAnswer = UserAnswer.builder()
                 .userId(userId)
                 .questionId(request.getQuestionId())
-                .choice(request.getChoice())
+                .coupleId(coupleId)
+                .selectedOption(request.getSelectedOption())
                 .build();
 
         UserAnswer savedAnswer = userAnswerRepository.save(userAnswer);
 
         // 태그 점수 업데이트
-        updateUserTagScores(userId, request.getQuestionId(), request.getChoice());
+        updateUserTagScores(userId, request.getQuestionId(), request.getSelectedOption());
 
         return convertToResponse(savedAnswer);
     }
@@ -100,8 +101,9 @@ public class UserAnswerService {
                 .id(userAnswer.getId())
                 .userId(userAnswer.getUserId())
                 .questionId(userAnswer.getQuestionId())
-                .choice(userAnswer.getChoice())
-                .answeredAt(userAnswer.getAnsweredAt())
+                .coupleId(userAnswer.getCoupleId())
+                .selectedOption(userAnswer.getSelectedOption())
+                .createdAt(userAnswer.getCreatedAt())
                 .build();
     }
 }

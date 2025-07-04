@@ -12,7 +12,7 @@ import java.util.UUID;
 @Repository
 public interface UserAnswerRepository extends JpaRepository<UserAnswer, UUID> {
 
-    @Query("SELECT ua FROM UserAnswer ua WHERE ua.userId = :userId ORDER BY ua.answeredAt DESC")
+    @Query("SELECT ua FROM UserAnswer ua WHERE ua.userId = :userId ORDER BY ua.createdAt DESC")
     List<UserAnswer> findByUserId(@Param("userId") UUID userId);
 
     @Query("SELECT ua FROM UserAnswer ua WHERE ua.userId = :userId AND ua.questionId = :questionId")
