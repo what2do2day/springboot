@@ -12,6 +12,10 @@ on:
         required: false
         default: 'latest'
 
+  push:
+    branches:
+      - main
+
 env:
   AWS_REGION: ap-northeast-2
   ECR_ACCOUNT_URL: 624227064848.dkr.ecr.ap-northeast-2.amazonaws.com
@@ -35,16 +39,26 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
 
+      - name: Determine service and image tag
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            SERVICE="gateway-service"  # 기본 서비스, push 이벤트 시 변경 가능
+            IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)
+          else
+            SERVICE="${{ github.event.inputs.service }}"
+            IMAGE_TAG="${{ github.event.inputs.image_tag }}"
+          fi
+          echo "SERVICE=$SERVICE" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
       - name: Build & Push Docker Image
         run: |
-          SERVICE=${{ github.event.inputs.service }}
-          IMAGE_TAG=${{ github.event.inputs.image_tag }}
           docker build -t $ECR_ACCOUNT_URL/$SERVICE:$IMAGE_TAG ./$SERVICE
           docker push $ECR_ACCOUNT_URL/$SERVICE:$IMAGE_TAG
 
       - name: Create application.yml from secret
         run: |
-          SERVICE=${{ github.event.inputs.service }}
           if [ "$SERVICE" = "gateway-service" ]; then
             echo "${{ secrets.APP_CONFIG_GATEWAY_SERVICE }}" > application.yml
           elif [ "$SERVICE" = "question-answer-service" ]; then
@@ -60,7 +74,6 @@ jobs:
 
       - name: Apply ConfigMap with application.yml
         run: |
-          SERVICE=${{ github.event.inputs.service }}
           kubectl create configmap $SERVICE-config --from-file=application.yml --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Configure kubectl
@@ -68,7 +81,5 @@ jobs:
 
       - name: Deploy to EKS
         run: |
-          SERVICE=${{ github.event.inputs.service }}
-          IMAGE_TAG=${{ github.event.inputs.image_tag }}
           kubectl set image deployment/$SERVICE $SERVICE=$ECR_ACCOUNT_URL/$SERVICE:$IMAGE_TAG
           kubectl rollout status deployment/$SERVICE
