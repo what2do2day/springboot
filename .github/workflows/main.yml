@@ -33,9 +33,14 @@ jobs:
       - name: Install AWS CLI v2
         run: |
           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
+          unzip -q awscliv2.zip
           sudo ./aws/install --update
           aws --version
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -44,7 +49,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Check IAM Identity
+      - name: Verify AWS Identity
         run: aws sts get-caller-identity
 
       - name: Login to Amazon ECR
@@ -55,19 +60,13 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
             SERVICE="${{ github.event.inputs.service }}"
-            if [ -z "$SERVICE" ]; then
-              SERVICE="gateway-service"
-            fi
+            [ -z "$SERVICE" ] && SERVICE="gateway-service"
             IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)
           else
             SERVICE="${{ github.event.inputs.service }}"
             IMAGE_TAG="${{ github.event.inputs.image_tag }}"
-            if [ -z "$SERVICE" ]; then
-              SERVICE="gateway-service"
-            fi
-            if [ -z "$IMAGE_TAG" ]; then
-              IMAGE_TAG="latest"
-            fi
+            [ -z "$SERVICE" ] && SERVICE="gateway-service"
+            [ -z "$IMAGE_TAG" ] && IMAGE_TAG="latest"
           fi
           echo "SERVICE=$SERVICE" >> $GITHUB_ENV
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
@@ -102,12 +101,25 @@ jobs:
               ;;
           esac
 
-      - name: Configure kubectl
-        run: aws eks --region $AWS_REGION update-kubeconfig --name $EKS_CLUSTER_NAME --debug
+      - name: Update kubeconfig for EKS
+        run: |
+          aws eks update-kubeconfig \
+            --name $EKS_CLUSTER_NAME \
+            --region $AWS_REGION
+          echo "kubeconfig updated"
+
+      - name: Debug EKS authentication and context
+        run: |
+          aws sts get-caller-identity
+          kubectl config current-context
+          kubectl config view --minify
+          kubectl get nodes
 
       - name: Apply ConfigMap with application.yml
         run: |
-          kubectl create configmap $SERVICE-config --from-file=application.yml --dry-run=client -o yaml | kubectl apply --validate=false -f -
+          kubectl create configmap $SERVICE-config \
+            --from-file=application.yml \
+            --dry-run=client -o yaml | kubectl apply --validate=false -f -
 
       - name: Deploy to EKS
         run: |
