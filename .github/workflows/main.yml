@@ -1,0 +1,74 @@
+name: Build, Push and Deploy with ConfigMap
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: '배포할 서비스 이름'
+        required: true
+        default: 'gateway-service'
+      image_tag:
+        description: '도커 이미지 태그 (옵션, 기본 "latest")'
+        required: false
+        default: 'latest'
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_ACCOUNT_URL: 624227064848.dkr.ecr.ap-northeast-2.amazonaws.com
+  EKS_CLUSTER_NAME: hilarious-jazz-outfit
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build & Push Docker Image
+        run: |
+          SERVICE=${{ github.event.inputs.service }}
+          IMAGE_TAG=${{ github.event.inputs.image_tag }}
+          docker build -t $ECR_ACCOUNT_URL/$SERVICE:$IMAGE_TAG ./$SERVICE
+          docker push $ECR_ACCOUNT_URL/$SERVICE:$IMAGE_TAG
+
+      - name: Create application.yml from secret
+        run: |
+          SERVICE=${{ github.event.inputs.service }}
+          if [ "$SERVICE" = "gateway-service" ]; then
+            echo "${{ secrets.APP_CONFIG_GATEWAY_SERVICE }}" > application.yml
+          elif [ "$SERVICE" = "question-answer-service" ]; then
+            echo "${{ secrets.APP_CONFIG_QUESTION_ANSWER_SERVICE }}" > application.yml
+          elif [ "$SERVICE" = "schedule-meeting-service" ]; then
+            echo "${{ secrets.APP_CONFIG_SCHEDULE_MEETING_SERVICE }}" > application.yml
+          elif [ "$SERVICE" = "user-couple-service" ]; then
+            echo "${{ secrets.APP_CONFIG_USER_COUPLE_SERVICE }}" > application.yml
+          else
+            echo "No secret found for $SERVICE"
+            exit 1
+          fi
+
+      - name: Apply ConfigMap with application.yml
+        run: |
+          SERVICE=${{ github.event.inputs.service }}
+          kubectl create configmap $SERVICE-config --from-file=application.yml --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Configure kubectl
+        run: aws eks --region $AWS_REGION update-kubeconfig --name $EKS_CLUSTER_NAME
+
+      - name: Deploy to EKS
+        run: |
+          SERVICE=${{ github.event.inputs.service }}
+          IMAGE_TAG=${{ github.event.inputs.image_tag }}
+          kubectl set image deployment/$SERVICE $SERVICE=$ECR_ACCOUNT_URL/$SERVICE:$IMAGE_TAG
+          kubectl rollout status deployment/$SERVICE
