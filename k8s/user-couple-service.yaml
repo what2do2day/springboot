@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-couple-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-couple-service
+  template:
+    metadata:
+      labels:
+        app: user-couple-service
+    spec:
+      containers:
+        - name: user-couple-service
+          image: 624227064848.dkr.ecr.ap-northeast-2.amazonaws.com/user-couple-service:latest
+          ports:
+            - containerPort: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-couple-service
+spec:
+  selector:
+    app: user-couple-service
+  ports:
+    - port: 8081
+      targetPort: 8081
+  type: ClusterIP
