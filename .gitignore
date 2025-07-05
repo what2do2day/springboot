@@ -42,4 +42,6 @@ out/
 **/application-prod.yml
 **/application.yml
 
+**/certs/**
+
 **/deploy**.sh
