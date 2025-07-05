@@ -40,7 +40,7 @@ jobs:
         id: vars
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
-            SERVICE="gateway-service"  # 기본 서비스, 필요시 변경 가능
+            SERVICE="gateway-service"
             IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)
           else
             SERVICE="${{ github.event.inputs.service }}"
@@ -50,7 +50,7 @@ jobs:
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Build JAR if Java service
-        if: ${{ contains(['gateway-service', 'question-answer-service', 'schedule-meeting-service', 'user-couple-service'], env.SERVICE) }}
+        if: env.SERVICE == 'gateway-service' || env.SERVICE == 'question-answer-service' || env.SERVICE == 'schedule-meeting-service' || env.SERVICE == 'user-couple-service'
         run: |
           cd $SERVICE
           ./gradlew clean build -x test
