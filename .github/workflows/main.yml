@@ -36,6 +36,21 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Check AWS credentials
+        run: aws sts get-caller-identity
+
+      - name: Configure kubectl
+        run: aws eks --region $AWS_REGION update-kubeconfig --name $EKS_CLUSTER_NAME
+
+      - name: Show kubeconfig
+        run: cat ~/.kube/config
+
+      - name: kubectl config view
+        run: kubectl config view
+
+      - name: Test kubectl connectivity
+        run: kubectl get nodes --request-timeout=10s
+
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
 
@@ -75,18 +90,6 @@ jobs:
             echo "No secret found for $SERVICE"
             exit 1
           fi
-
-      - name: Configure kubectl
-        run: aws eks --region $AWS_REGION update-kubeconfig --name $EKS_CLUSTER_NAME
-
-      - name: Show kubeconfig content
-        run: cat ~/.kube/config
-
-      - name: kubectl config view
-        run: kubectl config view
-
-      - name: Test kubectl connectivity
-        run: kubectl get nodes --request-timeout=10s
 
       - name: Apply ConfigMap with application.yml
         run: |
