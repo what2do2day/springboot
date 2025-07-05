@@ -79,8 +79,14 @@ jobs:
       - name: Configure kubectl
         run: aws eks --region $AWS_REGION update-kubeconfig --name $EKS_CLUSTER_NAME
 
-      - name: Debug kubectl config
+      - name: Show kubeconfig content
+        run: cat ~/.kube/config
+
+      - name: kubectl config view
         run: kubectl config view
+
+      - name: Test kubectl connectivity
+        run: kubectl get nodes --request-timeout=10s
 
       - name: Apply ConfigMap with application.yml
         run: |
