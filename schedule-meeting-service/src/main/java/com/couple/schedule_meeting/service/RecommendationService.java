@@ -24,7 +24,7 @@ public class RecommendationService {
     private final PlaceRepository placeRepository;
     
     // TODO: URL로 확인 필요
-    private static final String RECOMMENDATION_API_URL = "http://localhost:8080/api/v1/generate-plan-vector";
+    private static final String RECOMMENDATION_API_URL = "http://49.50.131.82:8000/api/v1/planner/generate-plan-vector";
     
     public RecommendationResponse getRecommendations(RecommendationRequest request) {
         log.info("외부 추천 API 호출 시작: {}", request);

@@ -27,7 +27,7 @@ public class AuthService {
         log.info("Gateway에서 로그인 요청 처리: {}", request.getEmail());
 
         // User-Couple Service에 로그인 요청
-        String userServiceUrl = "http://localhost:8081/api/users/login";
+        String userServiceUrl = "http://user-couple-service:8081/api/users/login";
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");

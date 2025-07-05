@@ -24,7 +24,7 @@ public class GatewayConfig {
                                                                 .rewritePath("/api/(?<segment>.*)", "/api/${segment}")
                                                                 .addRequestHeader("X-Response-Time",
                                                                                 System.currentTimeMillis() + ""))
-                                                .uri("http://localhost:8081"))
+                                                .uri("http://user-couple-service:8081"))
                                 .route("user-couple-service", r -> r
                                                 .path("/api/users/**", "/api/couples/**")
                                                 .filters(f -> f
@@ -33,7 +33,7 @@ public class GatewayConfig {
                                                                                 System.currentTimeMillis() + "")
                                                                 .filter(jwtFilter.apply(
                                                                                 new JwtAuthenticationFilter.Config())))
-                                                .uri("http://localhost:8081"))
+                                                .uri("http://user-couple-service:8081"))
                                 .route("schedule-meeting-service", r -> r
                                                 .path("/api/schedules/**", "/api/meetings/**", "/api/places/**")
                                                 .filters(f -> f
@@ -42,7 +42,7 @@ public class GatewayConfig {
                                                                                 System.currentTimeMillis() + "")
                                                                 .filter(jwtFilter.apply(
                                                                                 new JwtAuthenticationFilter.Config())))
-                                                .uri("http://localhost:8082"))
+                                                .uri("http://schedule-meeting-service:8082"))
                                 .route("question-answer-service", r -> r
                                                 .path("/api/questions/**", "/api/tags/**", "/api/user-answers/**",
                                                                 "/api/user-tag-profiles/**")
@@ -52,7 +52,7 @@ public class GatewayConfig {
                                                                                 System.currentTimeMillis() + "")
                                                                 .filter(jwtFilter.apply(
                                                                                 new JwtAuthenticationFilter.Config())))
-                                                .uri("http://localhost:8086"))
+                                                .uri("http://question-answer-service:8086"))
                                 .route("django-chat-service", r -> r
                                                 .path("/api/chat/**", "/api/push/**")
                                                 .filters(f -> f
@@ -63,14 +63,14 @@ public class GatewayConfig {
                                                                 .addRequestHeader("X-Couple-ID", "${X-Couple-ID}")
                                                                 .filter(jwtFilter.apply(
                                                                                 new JwtAuthenticationFilter.Config())))
-                                                .uri("http://localhost:8000"))
+                                                .uri("http://livechat-django:8000"))
                                 .route("django-websocket", r -> r
                                                 .path("/ws/**")
                                                 .filters(f -> f
                                                                 .rewritePath("/ws/(?<segment>.*)", "/ws/${segment}")
                                                                 .filter(webSocketAuthFilter.apply(
                                                                                 new WebSocketAuthFilter.Config())))
-                                                .uri("ws://localhost:8000"))
+                                                .uri("ws://livechat-django:8000"))
                                 .build();
         }
 
