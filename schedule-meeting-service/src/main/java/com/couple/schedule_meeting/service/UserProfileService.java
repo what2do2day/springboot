@@ -20,7 +20,7 @@ public class UserProfileService {
     private final WebClient webClient;
     
     // TODO: 실제 user-couple-service URL로 변경 필요 (현재는 8081 포트 가정)
-    @Value("${user-couple-service.url:http://localhost:8081}")
+    @Value("${user-couple-service.url:http://user-couple-service:8081}")
     private String userCoupleServiceUrl;
 
     /**

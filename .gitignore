@@ -37,3 +37,9 @@ out/
 .vscode/
 
 **/schedule-meeting-service/**/application-local.yml
+
+# Production configuration files
+**/application-prod.yml
+**/application.yml
+
+**/deploy**.sh
