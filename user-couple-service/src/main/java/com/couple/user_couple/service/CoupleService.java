@@ -6,6 +6,7 @@ import com.couple.user_couple.dto.CoupleMatchAcceptRequest;
 import com.couple.user_couple.dto.CoupleResponse;
 import com.couple.user_couple.dto.HomeInfoResponse;
 import com.couple.user_couple.dto.CoupleMemberResponse;
+import com.couple.user_couple.dto.UserResponse;
 import com.couple.user_couple.entity.Couple;
 import com.couple.user_couple.entity.User;
 import com.couple.user_couple.repository.CoupleRepository;
@@ -259,6 +260,7 @@ public class CoupleService {
         private CoupleMemberResponse convertToCoupleMemberResponse(User user) {
                 return CoupleMemberResponse.builder()
                                 .userId(user.getId())
+                                .coupleId(user.getCoupleId())
                                 .gender(user.getGender())
                                 .birth(user.getBirth())
                                 .build();

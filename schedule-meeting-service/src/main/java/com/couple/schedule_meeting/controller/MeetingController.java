@@ -48,7 +48,7 @@ public class MeetingController {
         
         try {
             // 통합 서비스를 사용하여 데이트 코스 추천 및 저장
-            Object tmpMeeting = meetingRecommendationService.createMeetingRecommendation(request, userId, coupleId);
+            Object tmpMeeting = meetingRecommendationService.createMeetingRecommendation(request, userId);
             
             MeetingRecommendResponse response = MeetingRecommendResponse.builder()
                     .documentId(tmpMeeting.toString())

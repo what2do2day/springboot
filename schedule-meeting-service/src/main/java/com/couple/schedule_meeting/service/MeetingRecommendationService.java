@@ -34,12 +34,11 @@ public class MeetingRecommendationService {
      * 
      * @param request 데이트 코스 추천 요청
      * @param userId 사용자 ID
-     * @param coupleId 커플 ID
      * @return 생성된 TmpMeeting 문서
      */
-    public TmpMeeting createMeetingRecommendation(MeetingCourseRecommendRequest request, String userId, String coupleId) {
+    public TmpMeeting createMeetingRecommendation(MeetingCourseRecommendRequest request, String userId) {
         try {
-            log.info("데이트 코스 추천 시작: userId={}, coupleId={}", userId, coupleId);
+            log.info("데이트 코스 추천 시작: userId={}", userId);
             
             // 1. 커플 취향 정보 조회 (기본 정보 + 취향 벡터)
             log.info("커플 취향 정보 조회 시작");

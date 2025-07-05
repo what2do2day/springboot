@@ -1,4 +1,4 @@
-package com.couple.user_couple.dto;
+package com.couple.schedule_meeting.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,4 +16,4 @@ public class CoupleMemberResponse {
     private UUID coupleId;
     private String gender;
     private String birth;
-}
+} 

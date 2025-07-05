@@ -42,6 +42,9 @@ public class UserInfoService {
         return coupleInfo;
     }
 
+
+
+
     /**
      * 사용자의 기본 정보와 취향 벡터를 모두 조회합니다.
      *
@@ -54,7 +57,8 @@ public class UserInfoService {
         // 기본 사용자 정보 조회
         UserProfile userProfile = userProfileService.getUserProfile(userId);
 
-        // 취향 벡터 조회
+        // TODO: question-answer에서 직접 취향 벡터 조회하도록 구현 필요
+        // 현재는 UserPreferenceService를 통해 외부 API 호출
         Map<String, Double> preferenceVector = userPreferenceService.getUserPreferenceVector(userId);
 
         // 통합 정보 생성

@@ -2,12 +2,16 @@ package com.couple.schedule_meeting.service;
 
 import com.couple.schedule_meeting.dto.CoupleProfile;
 import com.couple.schedule_meeting.dto.UserProfile;
+import com.couple.schedule_meeting.dto.CoupleMemberResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+
+import java.util.List;
 
 /**
  * user-couple-service에서 사용자 프로필 정보를 가져오는 서비스
@@ -19,7 +23,6 @@ public class UserProfileService {
 
     private final WebClient webClient;
     
-    // TODO: 실제 user-couple-service URL로 변경 필요 (현재는 8081 포트 가정)
     @Value("${user-couple-service.url:http://user-couple-service:8081}")
     private String userCoupleServiceUrl;
 
@@ -34,7 +37,7 @@ public class UserProfileService {
             log.info("사용자 프로필 정보 조회 시작: userId={}, url={}", userId, userCoupleServiceUrl);
             
             UserProfile userProfile = webClient.get()
-                    .uri(userCoupleServiceUrl + "/users/" + userId)
+                    .uri(userCoupleServiceUrl + "/api/couples/members/")
                     .retrieve()
                     .bodyToMono(UserProfile.class)
                     .block();
@@ -105,14 +108,43 @@ public class UserProfileService {
         try {
             log.info("사용자 ID로 커플 프로필 정보 조회 시작: userId={}, url={}", userId, userCoupleServiceUrl);
             
-            CoupleProfile coupleProfile = webClient.get()
-                    .uri(userCoupleServiceUrl + "/users/" + userId + "/couple")
+            List<CoupleMemberResponse> members = webClient.get()
+                    .uri(userCoupleServiceUrl + "/api/couples/members")
+                    .header("X-User-ID", userId)
                     .retrieve()
-                    .bodyToMono(CoupleProfile.class)
+                    .bodyToMono(new ParameterizedTypeReference<List<CoupleMemberResponse>>() {})
                     .block();
             
-            if (coupleProfile != null) {
-                log.info("사용자 ID로 커플 프로필 정보 조회 성공: userId={}, coupleId={}", userId, coupleProfile.getCoupleId());
+            if (members != null && !members.isEmpty()) {
+                // 첫 번째 멤버의 coupleId를 사용
+                String coupleId = members.get(0).getCoupleId().toString();
+                
+                // 두 명의 사용자 정보를 UserProfile로 변환
+                UserProfile user1 = null;
+                UserProfile user2 = null;
+                
+                for (CoupleMemberResponse member : members) {
+                    UserProfile userProfile = UserProfile.builder()
+                            .id(member.getUserId().toString())
+                            .gender(member.getGender())
+                            .birth(member.getBirth())
+                            .build();
+                    
+                    if (user1 == null) {
+                        user1 = userProfile;
+                    } else {
+                        user2 = userProfile;
+                        break;
+                    }
+                }
+                
+                CoupleProfile coupleProfile = CoupleProfile.builder()
+                        .coupleId(coupleId)
+                        .user1(user1)
+                        .user2(user2)
+                        .build();
+                
+                log.info("사용자 ID로 커플 프로필 정보 조회 성공: userId={}, coupleId={}", userId, coupleId);
                 return coupleProfile;
             } else {
                 log.warn("사용자 ID로 커플 프로필 정보가 null입니다: userId={}", userId);

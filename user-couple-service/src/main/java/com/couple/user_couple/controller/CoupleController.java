@@ -7,6 +7,7 @@ import com.couple.user_couple.dto.CoupleMatchAcceptRequest;
 import com.couple.user_couple.dto.CoupleResponse;
 import com.couple.user_couple.dto.HomeInfoResponse;
 import com.couple.user_couple.dto.CoupleMemberResponse;
+import com.couple.user_couple.dto.UserResponse;
 import com.couple.user_couple.service.CoupleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
