@@ -53,7 +53,7 @@ jobs:
         if: env.SERVICE == 'gateway-service' || env.SERVICE == 'question-answer-service' || env.SERVICE == 'schedule-meeting-service' || env.SERVICE == 'user-couple-service'
         run: |
           cd $SERVICE
-          ./gradlew clean build -x test
+          ./gradlew clean build -x test -p $SERVICE
 
       - name: Build & Push Docker Image
         run: |
