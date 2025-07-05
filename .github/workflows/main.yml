@@ -12,10 +12,10 @@ on:
         required: false
         default: 'latest'
 
-  push:
-    branches:
-      - main
-      - 'deploy/#16'
+  #push:
+  #  branches:
+  #    - main
+  #    - 'deploy/#16'
 
 env:
   AWS_REGION: ap-northeast-2
