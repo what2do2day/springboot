@@ -2,6 +2,7 @@ package com.couple.schedule_meeting.controller;
 
 import com.couple.schedule_meeting.dto.MeetingResponse;
 import com.couple.schedule_meeting.dto.MeetingRecommendResponse;
+import com.couple.schedule_meeting.entity.TmpMeeting;
 import com.couple.schedule_meeting.service.MeetingService;
 import com.couple.schedule_meeting.service.WeatherCardService;
 import com.couple.schedule_meeting.service.MeetingRecommendationService;
@@ -33,6 +34,7 @@ public class MeetingController {
     private final WeatherCardService weatherCardService;
     private final MeetingRecommendationService meetingRecommendationService;
     private final MeetingSaveService meetingSaveService;
+    private final com.couple.schedule_meeting.repository.TmpMeetingRepository tmpMeetingRepository;
 
     @GetMapping("/weather-cards")
     public ResponseEntity<List<WeatherCardService.WeatherCardResponse>> getWeatherCards(@RequestParam float lat, @RequestParam float lon) throws Exception {
@@ -40,7 +42,7 @@ public class MeetingController {
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/recommend")
+    @PostMapping("/path")
     public ResponseEntity<MeetingRecommendResponse> recommendCourse(
             @RequestBody MeetingCourseRecommendRequest request,
             @RequestHeader("X-User-ID") String userId,
@@ -68,6 +70,28 @@ public class MeetingController {
                     .build();
             
             return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
+    
+    @GetMapping("/recommend/{tmpMeetingId}")
+    public ResponseEntity<TmpMeeting> getTmpMeeting(
+            @PathVariable String tmpMeetingId) {
+        
+        try {
+            TmpMeeting tmpMeeting = tmpMeetingRepository.findById(tmpMeetingId)
+                    .orElse(null);
+            
+            if (tmpMeeting == null) {
+                log.warn("TmpMeeting을 찾을 수 없습니다: {}", tmpMeetingId);
+                return ResponseEntity.notFound().build();
+            }
+            
+            log.info("TmpMeeting 조회 성공: tmpMeetingId={}", tmpMeetingId);
+            return ResponseEntity.ok(tmpMeeting);
+            
+        } catch (Exception e) {
+            log.error("TmpMeeting 조회 중 오류: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
         }
     }
     
