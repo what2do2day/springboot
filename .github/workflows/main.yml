@@ -15,6 +15,7 @@ on:
   push:
     branches:
       - main
+      - 'deploy/#16'
 
 env:
   AWS_REGION: ap-northeast-2
@@ -26,8 +27,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -36,14 +36,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
-
       - name: Determine service and image tag
         id: vars
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
-            SERVICE="gateway-service"  # 기본 서비스, push 이벤트 시 변경 가능
+            SERVICE="gateway-service"  # 기본 서비스, 필요시 변경 가능
             IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)
           else
             SERVICE="${{ github.event.inputs.service }}"
@@ -51,6 +48,12 @@ jobs:
           fi
           echo "SERVICE=$SERVICE" >> $GITHUB_ENV
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Build JAR if Java service
+        if: ${{ contains(['gateway-service', 'question-answer-service', 'schedule-meeting-service', 'user-couple-service'], env.SERVICE) }}
+        run: |
+          cd $SERVICE
+          ./gradlew clean build -x test
 
       - name: Build & Push Docker Image
         run: |
