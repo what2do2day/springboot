@@ -21,7 +21,7 @@ env:
   AWS_REGION: ap-northeast-2
   ECR_ACCOUNT_URL: 624227064848.dkr.ecr.ap-northeast-2.amazonaws.com
   EKS_CLUSTER_NAME: hilarious-jazz-outfit
-  AWS_PROFILE: github-actions-user
+  AWS_PROFILE: github-actions-user  # IAM 사용자 이름과 매칭
 
 jobs:
   build_and_deploy:
@@ -38,7 +38,7 @@ jobs:
           sudo ./aws/install --update
           aws --version
 
-      - name: Manually write AWS credentials for profile
+      - name: Manually write AWS credentials profile
         run: |
           mkdir -p ~/.aws
           echo "[${{ env.AWS_PROFILE }}]" > ~/.aws/credentials
@@ -100,9 +100,11 @@ jobs:
               ;;
           esac
 
-      - name: Configure kubeconfig
+      - name: Configure kubeconfig with alias
         run: |
-          aws eks --region $AWS_REGION update-kubeconfig --name $EKS_CLUSTER_NAME
+          aws eks --region $AWS_REGION update-kubeconfig \
+            --name $EKS_CLUSTER_NAME \
+            --alias github-actions-user
 
       - name: Verify Kubernetes access
         run: |
@@ -111,7 +113,9 @@ jobs:
 
       - name: Apply ConfigMap with application.yml
         run: |
-          kubectl create configmap $SERVICE-config --from-file=application.yml --dry-run=client -o yaml | kubectl apply --validate=false -f -
+          kubectl create configmap $SERVICE-config \
+            --from-file=application.yml \
+            --dry-run=client -o yaml | kubectl apply --validate=false -f -
 
       - name: Deploy to EKS
         run: |
