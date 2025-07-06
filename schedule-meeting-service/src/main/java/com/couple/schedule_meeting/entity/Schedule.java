@@ -31,19 +31,19 @@ public class Schedule {
     @Column(name = "message")
     private String message;
 
-    @Column(name = "dateTime", nullable = false)
+    @Column(name = "datetime", nullable = false)
     private LocalDateTime dateTime;
 
     @Column(name = "year", insertable = false, updatable = false,
-            columnDefinition = "INTEGER GENERATED ALWAYS AS (EXTRACT(YEAR FROM date_time)) STORED")
+            columnDefinition = "INTEGER GENERATED ALWAYS AS (EXTRACT(YEAR FROM datetime)) STORED")
     private Integer year;
 
     @Column(name = "month", insertable = false, updatable = false,
-            columnDefinition = "INTEGER GENERATED ALWAYS AS (EXTRACT(MONTH FROM date_time)) STORED")
+            columnDefinition = "INTEGER GENERATED ALWAYS AS (EXTRACT(MONTH FROM datetime)) STORED")
     private Integer month;
 
     @Column(name = "day", insertable = false, updatable = false,
-            columnDefinition = "INTEGER GENERATED ALWAYS AS (EXTRACT(DAY FROM date_time)) STORED")
+            columnDefinition = "INTEGER GENERATED ALWAYS AS (EXTRACT(DAY FROM datetime)) STORED")
     private Integer day;
 
 } 
