@@ -1,19 +1,18 @@
 package com.couple.question_answer.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.List;
 
-@Entity
-@Table(name = "questions")
+@Document(collection = "questions")
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,33 +20,32 @@ import java.util.UUID;
 public class Question {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
-    @Column(name = "question", nullable = false, length = 100)
+    @Field("question")
     private String question;
 
-    @Column(name = "option1", nullable = false, length = 100)
-    private String option1;
-
-    @Column(name = "option2", nullable = false, length = 100)
-    private String option2;
-
-    @Column(name = "sent_yn", nullable = false, length = 1)
-    @Builder.Default
-    private String sentYn = "N";
-
-    @Column(name = "sent_time")
-    private LocalDateTime sentTime;
-
-    @Column(name = "date")
+    @Field("date")
     private LocalDate date;
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
+    @Field("choice_a")
+    private String choice_a;
+
+    @Field("vectors_a")
+    private List<VectorChange> vectors_a;
+
+    @Field("choice_b")
+    private String choice_b;
+
+    @Field("vectors_b")
+    private List<VectorChange> vectors_b;
+
+    @Field("tags")
+    private List<String> tags;
+
+    @Field("createdAt")
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
+    @Field("updatedAt")
     private LocalDateTime updatedAt;
 }

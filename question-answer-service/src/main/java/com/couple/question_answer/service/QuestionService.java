@@ -3,6 +3,7 @@ package com.couple.question_answer.service;
 import com.couple.question_answer.dto.QuestionRequest;
 import com.couple.question_answer.dto.QuestionResponse;
 import com.couple.question_answer.entity.Question;
+import com.couple.question_answer.entity.VectorChange;
 import com.couple.question_answer.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -21,81 +21,90 @@ import java.util.stream.Collectors;
 @Transactional
 public class QuestionService {
 
-    private final QuestionRepository questionRepository;
+        private final QuestionRepository questionRepository;
 
-    public QuestionResponse createQuestion(QuestionRequest request) {
-        log.info("질문 생성 요청: {}", request.getQuestion());
+        public QuestionResponse createQuestion(QuestionRequest request) {
+                log.info("질문 생성 요청: {}", request.getQuestion());
 
-        Question question = Question.builder()
-                .question(request.getQuestion())
-                .option1(request.getOption1())
-                .option2(request.getOption2())
-                .date(request.getDate())
-                .sentYn("N")
-                .build();
+                // VectorChangeDto를 VectorChange로 변환
+                List<VectorChange> vectorsA = request.getVectors_a().stream()
+                                .map(dto -> VectorChange.builder()
+                                                .dimension(dto.getDimension())
+                                                .change(dto.getChange())
+                                                .build())
+                                .collect(Collectors.toList());
 
-        Question savedQuestion = questionRepository.save(question);
-        return convertToResponse(savedQuestion);
-    }
+                List<VectorChange> vectorsB = request.getVectors_b().stream()
+                                .map(dto -> VectorChange.builder()
+                                                .dimension(dto.getDimension())
+                                                .change(dto.getChange())
+                                                .build())
+                                .collect(Collectors.toList());
 
-    public List<QuestionResponse> getQuestionsByDate(LocalDate date) {
-        log.info("날짜별 질문 조회: {}", date);
+                Question question = Question.builder()
+                                .question(request.getQuestion())
+                                .date(request.getDate())
+                                .choice_a(request.getChoice_a())
+                                .vectors_a(vectorsA)
+                                .choice_b(request.getChoice_b())
+                                .vectors_b(vectorsB)
+                                .tags(request.getTags())
+                                .createdAt(LocalDateTime.now())
+                                .updatedAt(LocalDateTime.now())
+                                .build();
 
-        List<Question> questions = questionRepository.findQuestionsByDate(date);
-        return questions.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
+                Question savedQuestion = questionRepository.save(question);
+                log.info("질문 생성 완료: id={}", savedQuestion.getId());
 
-    public List<QuestionResponse> getUnsentQuestionsByDate(LocalDate date) {
-        log.info("미전송 질문 조회: {}", date);
+                return convertToResponse(savedQuestion);
+        }
 
-        List<Question> questions = questionRepository.findUnsentQuestionsByDate(date);
-        return questions.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
+        public List<QuestionResponse> getAllQuestions() {
+                log.info("전체 질문 조회 요청");
 
-    public void markQuestionAsSent(UUID questionId) {
-        log.info("질문 전송 완료 처리: {}", questionId);
+                List<Question> questions = questionRepository.findAll();
+                return questions.stream()
+                                .map(this::convertToResponse)
+                                .collect(Collectors.toList());
+        }
 
-        Question question = questionRepository.findById(questionId)
-                .orElseThrow(() -> new RuntimeException("질문을 찾을 수 없습니다: " + questionId));
+        public QuestionResponse getQuestionById(String questionId) {
+                log.info("질문 조회 요청: questionId={}", questionId);
 
-        question.setSentYn("Y");
-        question.setSentTime(LocalDateTime.now());
-        questionRepository.save(question);
-    }
+                Question question = questionRepository.findById(questionId)
+                                .orElseThrow(() -> new IllegalArgumentException("질문을 찾을 수 없습니다: " + questionId));
 
-    public QuestionResponse getQuestionById(UUID questionId) {
-        log.info("질문 조회: {}", questionId);
+                return convertToResponse(question);
+        }
 
-        Question question = questionRepository.findById(questionId)
-                .orElseThrow(() -> new RuntimeException("질문을 찾을 수 없습니다: " + questionId));
+        public QuestionResponse getQuestionByDate(LocalDate date) {
+                log.info("날짜별 질문 조회 요청: date={}", date);
 
-        return convertToResponse(question);
-    }
+                Question question = questionRepository.findByDate(date)
+                                .orElseThrow(() -> new IllegalArgumentException("해당 날짜의 질문을 찾을 수 없습니다: " + date));
 
-    public List<QuestionResponse> getAllQuestions() {
-        log.info("전체 질문 조회");
+                return convertToResponse(question);
+        }
 
-        List<Question> questions = questionRepository.findAll();
-        return questions.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
+        public List<QuestionResponse> getQuestionsByDate(LocalDate date) {
+                log.info("날짜별 질문 목록 조회 요청: date={}", date);
 
-    private QuestionResponse convertToResponse(Question question) {
-        return QuestionResponse.builder()
-                .id(question.getId())
-                .question(question.getQuestion())
-                .option1(question.getOption1())
-                .option2(question.getOption2())
-                .sentYn(question.getSentYn())
-                .sentTime(question.getSentTime())
-                .date(question.getDate())
-                .createdAt(question.getCreatedAt())
-                .updatedAt(question.getUpdatedAt())
-                .build();
-    }
+                List<Question> questions = questionRepository.findAllByDateOrderByCreatedAtDesc(date);
+                return questions.stream()
+                                .map(this::convertToResponse)
+                                .collect(Collectors.toList());
+        }
+
+        private QuestionResponse convertToResponse(Question question) {
+                return QuestionResponse.builder()
+                                .id(question.getId())
+                                .question(question.getQuestion())
+                                .date(question.getDate())
+                                .choiceA(question.getChoice_a())
+                                .choiceB(question.getChoice_b())
+                                .tags(question.getTags())
+                                .createdAt(question.getCreatedAt())
+                                .updatedAt(question.getUpdatedAt())
+                                .build();
+        }
 }
