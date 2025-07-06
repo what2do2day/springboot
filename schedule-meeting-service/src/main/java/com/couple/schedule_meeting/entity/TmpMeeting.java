@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -22,9 +20,9 @@ public class TmpMeeting {
     private String id;
     
     private String name;
-    private LocalTime startTime;
-    private LocalTime endTime;
-    private LocalDate date;
+    private String startTime;
+    private String endTime;
+    private String date;
     private List<String> keyword;
     private MeetingResults results;
     private List<String> stores;

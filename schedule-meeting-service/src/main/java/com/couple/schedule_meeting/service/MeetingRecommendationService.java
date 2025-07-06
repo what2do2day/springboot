@@ -121,9 +121,9 @@ public class MeetingRecommendationService {
             
             TmpMeeting tmpMeeting = TmpMeeting.builder()
                     .name(request.getName())
-                    .startTime(request.getStartTime())
-                    .endTime(request.getEndTime())
-                    .date(request.getDate())
+                    .startTime(request.getStartTime().toString())
+                    .endTime(request.getEndTime().toString())
+                    .date(request.getDate().toString())
                     .keyword(request.getKeyword())
                     .results(results)
                     .stores(topStores) // 1순위 스토어들의 이름 추가

@@ -8,7 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
@@ -72,16 +74,20 @@ public class MeetingSaveService {
      * TmpMeeting에서 Meeting 엔티티 생성
      */
     private Meeting createMeetingFromTmpMeeting(TmpMeeting tmpMeeting, UUID coupleId) {
-        // date를 LocalDateTime으로 변환
-        LocalDateTime startDateTime = LocalDateTime.of(tmpMeeting.getDate(), tmpMeeting.getStartTime());
-        LocalDateTime endDateTime = LocalDateTime.of(tmpMeeting.getDate(), tmpMeeting.getEndTime());
+        // String date와 time을 LocalDate와 LocalTime으로 파싱한 후 LocalDateTime으로 변환
+        LocalDate localDate = LocalDate.parse(tmpMeeting.getDate());
+        LocalTime startLocalTime = LocalTime.parse(tmpMeeting.getStartTime());
+        LocalTime endLocalTime = LocalTime.parse(tmpMeeting.getEndTime());
+        
+        LocalDateTime startDateTime = LocalDateTime.of(localDate, startLocalTime);
+        LocalDateTime endDateTime = LocalDateTime.of(localDate, endLocalTime);
         
         return Meeting.builder()
                 .coupleId(coupleId)
                 .name(tmpMeeting.getName())
                 .startTime(startDateTime)
                 .endTime(endDateTime)
-                .date(tmpMeeting.getDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                .date(localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
                 .build();
     }
     

@@ -14,4 +14,5 @@ RUN keytool -importcert \
 
 EXPOSE 8082
 
-ENTRYPOINT ["java", "--add-opens=java.base/java.time=ALL-UNNAMED", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
+# ENTRYPOINT
+ENTRYPOINT [ "java", "--add-opens=java.base/java.time=ALL-UNNAMED", "-Djavax.net.ssl.trustStore=/usr/local/openjdk-17/lib/security/cacerts", "-Djavax.net.ssl.trustStorePassword=changeit", "-Dspring.profiles.active=prod", "-jar", "app.jar" ]
