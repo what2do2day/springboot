@@ -70,8 +70,6 @@ public class WeatherCardService {
             LocalDate itemDate = LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE);
             LocalDate koreaToday = LocalDate.now(ZoneId.of("Asia/Seoul"));
             
-            System.out.println("[DEBUG] 처리 중인 날짜: " + itemDate + ", 한국 오늘: " + koreaToday);
-            
             if (itemDate.isAfter(koreaToday.plusDays(4)) || itemDate.isBefore(koreaToday)) {
                 System.out.println("[DEBUG] 날짜 필터링 제외: " + itemDate);
                 continue;
