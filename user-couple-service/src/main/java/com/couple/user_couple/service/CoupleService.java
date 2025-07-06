@@ -7,6 +7,7 @@ import com.couple.user_couple.dto.CoupleResponse;
 import com.couple.user_couple.dto.HomeInfoResponse;
 import com.couple.user_couple.dto.CoupleMemberResponse;
 import com.couple.user_couple.dto.UserResponse;
+import com.couple.user_couple.dto.CoupleInfoResponse;
 import com.couple.user_couple.entity.Couple;
 import com.couple.user_couple.entity.User;
 import com.couple.user_couple.repository.CoupleRepository;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.List;
@@ -185,6 +187,53 @@ public class CoupleService {
                 log.info("커플 날짜 설정 완료: {}", request.getDate());
         }
 
+        /**
+         * 커플의 디데이를 계산합니다.
+         * startDate부터 현재까지의 일수를 반환합니다.
+         * 한국 시간 기준으로 계산합니다.
+         * 
+         * @param coupleId 커플 ID
+         * @return 디데이 (일수)
+         */
+        public long calculateDday(UUID coupleId) {
+                Couple couple = coupleRepository.findById(coupleId)
+                                .orElseThrow(() -> new RuntimeException("커플을 찾을 수 없습니다: " + coupleId));
+                
+                // startDate가 null인 경우 처리
+                if (couple.getStartDate() == null) {
+                        log.warn("커플의 startDate가 null입니다: {}", coupleId);
+                        return 0L;
+                }
+                
+                // 한국 시간 기준으로 현재 날짜 계산
+                ZoneId koreaZone = ZoneId.of("Asia/Seoul");
+                LocalDate startDate = couple.getStartDate().toLocalDate();
+                LocalDate currentDate = LocalDate.now(koreaZone);
+                
+                long daysSinceStart = ChronoUnit.DAYS.between(startDate, currentDate);
+                log.info("디데이 계산 완료: coupleId={}, startDate={}, currentDate={}, dday={}", 
+                                coupleId, startDate, currentDate, daysSinceStart);
+                
+                return daysSinceStart;
+        }
+
+        /**
+         * 커플의 디데이를 계산합니다 (사용자 ID로).
+         * 
+         * @param userId 사용자 ID
+         * @return 디데이 (일수)
+         */
+        public long calculateDdayByUserId(UUID userId) {
+                User user = userRepository.findById(userId)
+                                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + userId));
+                
+                if (user.getCoupleId() == null) {
+                        throw new RuntimeException("커플이 없는 사용자입니다: " + userId);
+                }
+                
+                return calculateDday(user.getCoupleId());
+        }
+
         public HomeInfoResponse getHomeInfo(UUID userId) {
                 log.info("홈 정보 조회: {}", userId);
 
@@ -198,8 +247,8 @@ public class CoupleService {
                 User partner = userRepository.findPartnerByCoupleIdAndUserId(couple.getId(), userId)
                                 .orElse(null);
 
-                // 디데이 계산
-                long daysSinceStart = ChronoUnit.DAYS.between(couple.getStartDate(), LocalDateTime.now());
+                // 디데이 계산 (개선된 메서드 사용)
+                long daysSinceStart = calculateDday(couple.getId());
 
                 return HomeInfoResponse.builder()
                                 .coupleId(couple.getId())
@@ -219,7 +268,8 @@ public class CoupleService {
                 Couple couple = coupleRepository.findById(user.getCoupleId())
                                 .orElseThrow(() -> new RuntimeException("커플을 찾을 수 없습니다: " + user.getCoupleId()));
 
-                long daysSinceStart = ChronoUnit.DAYS.between(couple.getStartDate(), LocalDateTime.now());
+                // 디데이 계산 (개선된 메서드 사용)
+                long daysSinceStart = calculateDday(couple.getId());
 
                 return CoupleResponse.builder()
                                 .id(couple.getId())
@@ -280,5 +330,71 @@ public class CoupleService {
                                 .month(user.getMonth())
                                 .date(user.getDate())
                                 .build();
+        }
+
+        /**
+         * 사용자 ID로 커플 정보와 디데이를 조회합니다.
+         * 
+         * @param userId 사용자 ID
+         * @return 커플 정보와 디데이
+         */
+        public CoupleInfoResponse getCoupleInfoByUserId(UUID userId) {
+                log.info("커플 정보 조회 시작: userId={}", userId);
+
+                User user = userRepository.findById(userId)
+                                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + userId));
+                log.info("사용자 조회 성공: userId={}, coupleId={}", userId, user.getCoupleId());
+
+                if (user.getCoupleId() == null) {
+                        log.error("사용자가 커플에 속하지 않음: userId={}", userId);
+                        throw new RuntimeException("커플이 없는 사용자입니다: " + userId);
+                }
+
+                Couple couple = coupleRepository.findById(user.getCoupleId())
+                                .orElseThrow(() -> new RuntimeException("커플을 찾을 수 없습니다: " + user.getCoupleId()));
+                log.info("커플 조회 성공: coupleId={}, coupleName={}, startDate={}", 
+                        couple.getId(), couple.getName(), couple.getStartDate());
+
+                // 디데이 계산
+                long dday = calculateDday(couple.getId());
+                log.info("디데이 계산 완료: dday={}", dday);
+
+                // 커플 멤버 정보 조회
+                List<User> users = userRepository.findByCoupleId(couple.getId());
+                log.info("커플 멤버 조회: {}명", users.size());
+                
+                if (users.size() < 2) {
+                        log.error("커플 멤버가 부족함: coupleId={}, memberCount={}", couple.getId(), users.size());
+                        throw new RuntimeException("커플 멤버가 부족합니다: " + couple.getId());
+                }
+
+                User user1 = users.get(0);
+                User user2 = users.get(1);
+                log.info("커플 멤버 정보: user1={}, user2={}", user1.getId(), user2.getId());
+
+                CoupleInfoResponse response = CoupleInfoResponse.builder()
+                                .coupleId(couple.getId())
+                                .coupleName(couple.getName())
+                                .dday(dday)
+                                .startDate(couple.getStartDate() != null ? couple.getStartDate().toString() : null)
+                                .user1(CoupleInfoResponse.UserInfo.builder()
+                                                .userId(user1.getId())
+                                                .name(user1.getName())
+                                                .gender(user1.getGender())
+                                                .birth(user1.getBirth())
+                                                .build())
+                                .user2(CoupleInfoResponse.UserInfo.builder()
+                                                .userId(user2.getId())
+                                                .name(user2.getName())
+                                                .gender(user2.getGender())
+                                                .birth(user2.getBirth())
+                                                .build())
+                                .build();
+                
+                log.info("커플 정보 응답 생성 완료: coupleId={}, dday={}, user1Birth={}, user2Birth={}", 
+                        response.getCoupleId(), response.getDday(), 
+                        response.getUser1().getBirth(), response.getUser2().getBirth());
+                
+                return response;
         }
 }
