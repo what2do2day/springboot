@@ -1,5 +1,6 @@
 package com.couple.user_couple.service;
 
+import com.couple.common.security.JwtTokenProvider;
 import com.couple.user_couple.dto.CoupleDateRequest;
 import com.couple.user_couple.dto.CoupleMatchRequest;
 import com.couple.user_couple.dto.CoupleMatchAcceptRequest;
@@ -31,6 +32,7 @@ public class CoupleService {
         private final CoupleRepository coupleRepository;
         private final UserRepository userRepository;
         private final StringRedisTemplate redisTemplate;
+        private final JwtTokenProvider jwtTokenProvider;
 
         private static final String MATCH_CODE_PREFIX = "couple:match:";
         private static final int MATCH_CODE_EXPIRE_SECONDS = 300; // 5분
@@ -61,7 +63,7 @@ public class CoupleService {
                 return matchCode;
         }
 
-        public void acceptMatchCode(UUID userId, CoupleMatchAcceptRequest request) {
+        public String acceptMatchCode(UUID userId, CoupleMatchAcceptRequest request) {
                 log.info("커플 매칭 수락 요청: {}", userId);
 
                 // 사용자 확인
@@ -127,7 +129,11 @@ public class CoupleService {
                 // Redis에서 매칭 정보 삭제
                 redisTemplate.delete(redisKey);
 
-                log.info("커플 매칭 완료: {}", savedCouple.getId());
+                // 새로운 JWT 토큰 생성 (coupleId 포함)
+                String newToken = jwtTokenProvider.generateToken(user.getId(), user.getCoupleId());
+
+                log.info("커플 매칭 완료: {} - 새로운 토큰 생성", savedCouple.getId());
+                return newToken;
         }
 
         public void breakCouple(UUID userId) {

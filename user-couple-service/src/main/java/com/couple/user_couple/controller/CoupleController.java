@@ -46,13 +46,18 @@ public class CoupleController {
     }
 
     @PostMapping("/match/accept")
-    @Operation(summary = "커플 매칭 수락", description = "매칭 코드를 입력하여 커플을 생성합니다.")
-    public ResponseEntity<ApiResponse<String>> acceptMatchCode(
+    @Operation(summary = "커플 매칭 수락", description = "매칭 코드를 입력하여 커플을 생성하고 새로운 토큰을 반환합니다.")
+    public ResponseEntity<ApiResponse<Map<String, String>>> acceptMatchCode(
             @Parameter(description = "사용자 ID", example = "123e4567-e89b-12d3-a456-426614174000") @RequestHeader("X-User-ID") String userId,
             @Valid @RequestBody CoupleMatchAcceptRequest request) {
 
-        coupleService.acceptMatchCode(UUID.fromString(userId), request);
-        return ResponseEntity.ok(ApiResponse.success("커플 매칭이 완료되었습니다.", null));
+        String newToken = coupleService.acceptMatchCode(UUID.fromString(userId), request);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("accessToken", newToken);
+        response.put("message", "커플 매칭이 완료되었습니다. 새로운 토큰을 사용해주세요.");
+
+        return ResponseEntity.ok(ApiResponse.success("커플 매칭이 완료되었습니다.", response));
     }
 
     @DeleteMapping("/break")
