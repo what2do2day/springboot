@@ -45,7 +45,7 @@ public class MeetingController {
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/path")
+    @PostMapping("/recommend")
     public ResponseEntity<MeetingRecommendResponse> recommendCourse(
             @RequestBody MeetingCourseRecommendRequest request,
             @RequestHeader("X-User-ID") String userId,
@@ -53,10 +53,10 @@ public class MeetingController {
         
         try {
             // 통합 서비스를 사용하여 데이트 코스 추천 및 저장
-            Object tmpMeeting = meetingRecommendationService.createMeetingRecommendation(request, userId);
+            TmpMeeting tmpMeeting = meetingRecommendationService.createMeetingRecommendation(request, userId);
             
             MeetingRecommendResponse response = MeetingRecommendResponse.builder()
-                    .documentId(tmpMeeting.toString())
+                    .documentId(tmpMeeting.getId())
                     .message("데이트 코스 추천이 완료되었습니다.")
                     .value(tmpMeeting)
                     .build();
@@ -145,6 +145,39 @@ public class MeetingController {
                     request.getCurrentLat(), request.getCurrentLon(), request.getPlaceId());
             
             WaypointRouteResponse response = directionService.getDirection(request);
+            
+            if (response != null) {
+                log.info("대중교통 경로 조회 성공");
+                return ResponseEntity.ok(response);
+            } else {
+                log.warn("대중교통 경로 조회 실패");
+                return ResponseEntity.notFound().build();
+            }
+            
+        } catch (Exception e) {
+            log.error("대중교통 경로 조회 중 오류: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    @PostMapping("/path")
+    public ResponseEntity<WaypointRouteResponse> getPath(
+            @RequestBody MeetingCourseRecommendRequest request,
+            @RequestHeader("X-User-ID") String userId,
+            @RequestHeader("X-Couple-ID") String coupleId) {
+        
+        try {
+            log.info("대중교통 경로 조회 요청: 사용자={}, 커플={}", userId, coupleId);
+            
+            // TODO: 여기에 대중교통 경로 조회 로직 구현
+            // 현재는 기존 direction API와 동일한 응답 형태로 반환
+            WaypointRouteResponse response = directionService.getDirection(
+                DirectionRequest.builder()
+                    .currentLat("37.5665") // 서울 시청 좌표 (기본값)
+                    .currentLon("126.9780")
+                    .placeId("test_place_id")
+                    .build()
+            );
             
             if (response != null) {
                 log.info("대중교통 경로 조회 성공");

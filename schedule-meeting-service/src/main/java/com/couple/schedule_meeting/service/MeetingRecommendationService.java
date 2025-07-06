@@ -57,10 +57,10 @@ public class MeetingRecommendationService {
                             .gender(user2Info.getGender())
                             .preferences(user2Info.getPreferenceVector())
                             .build())
-                    .date(request.getDate())
+                    .date(request.getDate().toString())
                     .weather(request.getWeather())
-                    .startTime(request.getStartTime())
-                    .endTime(request.getEndTime())
+                    .startTime(request.getStartTime().toString())
+                    .endTime(request.getEndTime().toString())
                     .keywords(request.getKeyword())
                     .build();
             
@@ -164,7 +164,7 @@ public class MeetingRecommendationService {
                                 .map(candidate -> TmpMeeting.StoreCandidate.builder()
                                         .storeName(candidate.getStoreName())
                                         .score(candidate.getScore())
-                                        .similarity(candidate.getSimilarity())
+                                        .similarity(null) // 외부 API에서 제공하지 않으므로 null로 설정
                                         .description(candidate.getDescription())
                                         .build())
                                 .collect(Collectors.toList()))

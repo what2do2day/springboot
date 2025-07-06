@@ -57,9 +57,9 @@ public class UserInfoService {
         // 기본 사용자 정보 조회
         UserProfile userProfile = userProfileService.getUserProfile(userId);
 
-        // TODO: question-answer에서 직접 취향 벡터 조회하도록 구현 필요
-        // 현재는 UserPreferenceService를 통해 외부 API 호출
-        Map<String, Double> preferenceVector = userPreferenceService.getUserPreferenceVector(userId);
+        // 테스트용 하드코딩된 취향 벡터 사용
+        // TODO: 실제 운영 시에는 userPreferenceService.getUserPreferenceVector(userId) 사용
+        Map<String, Double> preferenceVector = userPreferenceService.getHardcodedPreferenceVector(userId);
 
         // 통합 정보 생성
         UserInfo userInfo = UserInfo.builder()
@@ -69,7 +69,8 @@ public class UserInfoService {
                 .preferenceVector(preferenceVector)
                 .build();
 
-        log.info("사용자 정보와 취향 조회 완료: userId={}, gender={}", userId, userInfo.getGender());
+        log.info("사용자 정보와 취향 조회 완료: userId={}, gender={}, 벡터개수={}", 
+                userId, userInfo.getGender(), preferenceVector.size());
         return userInfo;
     }
 } 
