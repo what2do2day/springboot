@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: schedule-meeting-ingress
+spec:
+  rules:
+    - host: schedule-meeting.49.50.131.82
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: schedule-meeting
+                port:
+                  number: 8082 
