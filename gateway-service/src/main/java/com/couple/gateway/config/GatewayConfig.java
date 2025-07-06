@@ -53,14 +53,31 @@ public class GatewayConfig {
                                                                 .filter(jwtFilter.apply(
                                                                                 new JwtAuthenticationFilter.Config())))
                                                 .uri("http://question-answer-service:8086"))
-                                .route("django-chat-service", r -> r
+                                .route("couple-chat-service", r -> r
+                                                .path("/api/couple-chat/**")
+                                                .filters(f -> f
+                                                                .rewritePath("/api/(?<segment>.*)", "/api/${segment}")
+                                                                .addRequestHeader("X-Response-Time",
+                                                                                System.currentTimeMillis() + "")
+                                                                .filter(jwtFilter.apply(
+                                                                                new JwtAuthenticationFilter.Config())))
+                                                .uri("http://couple-chat-service:8084"))
+                                .route("couple-chat-websocket", r -> r
+                                                .path("/ws/couple-chat/**")
+                                                .filters(f -> f
+                                                                .rewritePath("/ws/(?<segment>.*)", "/ws/${segment}")
+                                                                .filter(webSocketAuthFilter.apply(
+                                                                                new WebSocketAuthFilter.Config())))
+                                                .uri("ws://couple-chat-service:8084"))
+                                .route("couple-chat-static", r -> r
+                                                .path("/", "/index.html", "/js/**", "/css/**")
+                                                .uri("http://couple-chat-service:8084"))
+                                .route("livechat-django", r -> r
                                                 .path("/api/chat/**", "/api/push/**")
                                                 .filters(f -> f
                                                                 .rewritePath("/api/(?<segment>.*)", "/api/${segment}")
                                                                 .addRequestHeader("X-Response-Time",
                                                                                 System.currentTimeMillis() + "")
-                                                                .addRequestHeader("X-User-ID", "${X-User-ID}")
-                                                                .addRequestHeader("X-Couple-ID", "${X-Couple-ID}")
                                                                 .filter(jwtFilter.apply(
                                                                                 new JwtAuthenticationFilter.Config())))
                                                 .uri("http://livechat-django:8000"))
@@ -71,6 +88,10 @@ public class GatewayConfig {
                                                                 .filter(webSocketAuthFilter.apply(
                                                                                 new WebSocketAuthFilter.Config())))
                                                 .uri("ws://livechat-django:8000"))
+                                .route("django-static", r -> r
+                                                .path("/chat_test.html", "/chat_gateway_test.html", "/chat_jwt_test.html", 
+                                                                "/room_chat.html", "/static/**")
+                                                .uri("http://livechat-django:8000"))
                                 .build();
         }
 
