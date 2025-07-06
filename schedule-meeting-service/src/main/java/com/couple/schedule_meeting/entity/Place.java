@@ -29,9 +29,9 @@ public class Place {
     @Column(name = "category", length = 100, nullable = false)
     private String category;
 
-    @Column(name = "latitude", precision = 15, scale = 13)
+    @Column(name = "lat", precision = 15, scale = 13)
     private BigDecimal latitude;
 
-    @Column(name = "longitude", precision = 15, scale = 13)
+    @Column(name = "lon", precision = 15, scale = 13)
     private BigDecimal longitude;
 } 

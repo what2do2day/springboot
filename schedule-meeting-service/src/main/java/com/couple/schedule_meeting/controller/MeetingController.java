@@ -23,6 +23,8 @@ import java.util.UUID;
 
 import com.couple.schedule_meeting.dto.MeetingCourseRecommendRequest;
 import com.couple.schedule_meeting.dto.MeetingSaveRequest;
+import com.couple.schedule_meeting.dto.DirectionRequest;
+import com.couple.schedule_meeting.dto.WaypointRouteResponse;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -35,6 +37,7 @@ public class MeetingController {
     private final MeetingRecommendationService meetingRecommendationService;
     private final MeetingSaveService meetingSaveService;
     private final com.couple.schedule_meeting.repository.TmpMeetingRepository tmpMeetingRepository;
+    private final com.couple.schedule_meeting.service.DirectionService directionService;
 
     @GetMapping("/weather-cards")
     public ResponseEntity<List<WeatherCardService.WeatherCardResponse>> getWeatherCards(@RequestParam float lat, @RequestParam float lon) throws Exception {
@@ -130,6 +133,30 @@ public class MeetingController {
         } catch (Exception e) {
             log.error("데이트 일정 저장 중 오류: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body("데이트 일정 저장 중 오류가 발생했습니다.");
+        }
+    }
+
+    @PostMapping("/direction")
+    public ResponseEntity<WaypointRouteResponse> getDirection(
+            @RequestBody DirectionRequest request) {
+        
+        try {
+            log.info("대중교통 경로 조회 요청: 현재위치({}, {}), 장소ID={}", 
+                    request.getCurrentLat(), request.getCurrentLon(), request.getPlaceId());
+            
+            WaypointRouteResponse response = directionService.getDirection(request);
+            
+            if (response != null) {
+                log.info("대중교통 경로 조회 성공");
+                return ResponseEntity.ok(response);
+            } else {
+                log.warn("대중교통 경로 조회 실패");
+                return ResponseEntity.notFound().build();
+            }
+            
+        } catch (Exception e) {
+            log.error("대중교통 경로 조회 중 오류: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
         }
     }
 } 
