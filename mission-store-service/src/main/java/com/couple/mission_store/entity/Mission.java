@@ -1,4 +1,4 @@
-package com.couple.question_answer.entity;
+package com.couple.mission_store.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -12,25 +12,32 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "tags")
+@Table(name = "missions")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Tag {
+public class Mission {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "name", nullable = false, length = 50, unique = true)
-    private String name;
+    @Column(name = "title", nullable = false, length = 100)
+    private String title;
 
+    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "coin_reward", nullable = false)
+    @Builder.Default
+    private Integer coinReward = 10;
+
+    @Column(name = "created_at", nullable = false)
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at", nullable = false)
     @UpdateTimestamp
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }

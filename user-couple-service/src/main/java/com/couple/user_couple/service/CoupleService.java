@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,7 +32,6 @@ public class CoupleService {
         private final CoupleRepository coupleRepository;
         private final UserRepository userRepository;
         private final StringRedisTemplate redisTemplate;
-        private final RestTemplate restTemplate;
 
         private static final String MATCH_CODE_PREFIX = "couple:match:";
         private static final int MATCH_CODE_EXPIRE_SECONDS = 300; // 5분
@@ -129,19 +127,6 @@ public class CoupleService {
 
                 // Redis에서 매칭 정보 삭제
                 redisTemplate.delete(redisKey);
-
-                // couple-chat-service에 채팅방 생성 요청
-                try {
-                    String chatServiceUrl = "http://couple-chat-service:8084/api/v1/couple-chat/rooms";
-                    String requestUrl = String.format("%s?coupleId=%s&user1Id=%s&user2Id=%s", 
-                        chatServiceUrl, savedCouple.getId(), requesterId, userId);
-                    
-                    restTemplate.postForEntity(requestUrl, null, Object.class);
-                    log.info("채팅방 생성 완료: coupleId={}", savedCouple.getId());
-                } catch (Exception e) {
-                    log.error("채팅방 생성 실패: {}", e.getMessage());
-                    // 채팅방 생성 실패는 커플 생성에 영향을 주지 않도록 함
-                }
 
                 log.info("커플 매칭 완료: {}", savedCouple.getId());
         }

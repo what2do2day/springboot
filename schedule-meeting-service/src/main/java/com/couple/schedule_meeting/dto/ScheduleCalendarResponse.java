@@ -28,14 +28,14 @@ public class ScheduleCalendarResponse {
     public static class DateInfo {
         private int date;
         private String type;
-        private String title; // optional, for meeting/schedule
-        private String name;  // optional, for birthday
+        private String title; // meeting name, birthday name, anniversary text
+        private String detail; // meetingId, userId, null for anniversary
 
-        public DateInfo(int date, String type, String title, String name) {
+        public DateInfo(int date, String type, String title, String detail) {
             this.date = date;
             this.type = type;
             this.title = title;
-            this.name = name;
+            this.detail = detail;
         }
 
         public int getDate() {
@@ -50,8 +50,8 @@ public class ScheduleCalendarResponse {
             return title;
         }
 
-        public String getName() {
-            return name;
+        public String getDetail() {
+            return detail;
         }
     }
 } 

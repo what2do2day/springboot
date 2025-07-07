@@ -1,6 +1,7 @@
 package com.couple.question_answer.controller;
 
 import com.couple.common.dto.ApiResponse;
+import com.couple.question_answer.dto.CoupleVectorsResponse;
 import com.couple.question_answer.dto.UserVectorRequest;
 import com.couple.question_answer.dto.UserVectorResponse;
 import com.couple.question_answer.service.UserVectorService;
@@ -27,7 +28,8 @@ public class UserVectorController {
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
         log.info("사용자 벡터 생성 요청 - userId: {}, coupleId: {}", userId, coupleId);
 
-        UserVectorResponse response = userVectorService.createUserVector(UUID.fromString(userId));
+        UUID userIdUUID = UUID.fromString(userId);
+        UserVectorResponse response = userVectorService.createUserVector(userIdUUID);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("사용자 벡터가 생성되었습니다.", response));
     }
@@ -38,7 +40,8 @@ public class UserVectorController {
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
         log.info("내 벡터 조회 요청 - userId: {}, coupleId: {}", userId, coupleId);
 
-        UserVectorResponse response = userVectorService.getUserVector(UUID.fromString(userId));
+        UUID userIdUUID = UUID.fromString(userId);
+        UserVectorResponse response = userVectorService.getUserVector(userIdUUID);
         return ResponseEntity.ok(ApiResponse.success("벡터 조회 성공", response));
     }
 
@@ -49,7 +52,8 @@ public class UserVectorController {
             @Valid @RequestBody UserVectorRequest request) {
         log.info("내 벡터 업데이트 요청 - userId: {}, coupleId: {}", userId, coupleId);
 
-        UserVectorResponse response = userVectorService.updateUserVector(UUID.fromString(userId), request);
+        UUID userIdUUID = UUID.fromString(userId);
+        UserVectorResponse response = userVectorService.updateUserVector(userIdUUID, request);
         return ResponseEntity.ok(ApiResponse.success("벡터 업데이트 성공", response));
     }
 
@@ -62,7 +66,8 @@ public class UserVectorController {
         log.info("특정 벡터 업데이트 요청 - userId: {}, coupleId: {}, vectorKey: {}, value: {}",
                 userId, coupleId, vectorKey, value);
 
-        UserVectorResponse response = userVectorService.updateSpecificVector(UUID.fromString(userId), vectorKey, value);
+        UUID userIdUUID = UUID.fromString(userId);
+        UserVectorResponse response = userVectorService.updateSpecificVector(userIdUUID, vectorKey, value);
         return ResponseEntity.ok(ApiResponse.success("특정 벡터 업데이트 성공", response));
     }
 
@@ -72,7 +77,8 @@ public class UserVectorController {
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
         log.info("내 벡터 삭제 요청 - userId: {}, coupleId: {}", userId, coupleId);
 
-        userVectorService.deleteUserVector(UUID.fromString(userId));
+        UUID userIdUUID = UUID.fromString(userId);
+        userVectorService.deleteUserVector(userIdUUID);
         return ResponseEntity.ok(ApiResponse.success("벡터 삭제 성공", null));
     }
 
@@ -94,5 +100,16 @@ public class UserVectorController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("벡터 조회 중 오류가 발생했습니다"));
         }
+    }
+
+    @GetMapping("/couple-vectors")
+    public ResponseEntity<ApiResponse<CoupleVectorsResponse>> getCoupleVectors(
+            @RequestHeader("X-User-ID") String userId,
+            @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
+        log.info("커플 벡터 조회 요청 - userId: {}, coupleId: {}", userId, coupleId);
+
+        UUID userIdUUID = UUID.fromString(userId);
+        CoupleVectorsResponse response = userVectorService.getCoupleVectors(userIdUUID);
+        return ResponseEntity.ok(ApiResponse.success("커플 벡터 조회 성공", response));
     }
 }

@@ -16,8 +16,8 @@ public class UserAnswerResponse {
 
     private UUID id;
     private UUID userId;
-    private UUID questionId;
+    private String questionId;
     private UUID coupleId;
-    private String selectedOption;
+    private String selectedChoice;
     private LocalDateTime createdAt;
 }

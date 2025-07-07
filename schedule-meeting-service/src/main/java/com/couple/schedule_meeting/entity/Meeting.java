@@ -25,10 +25,10 @@ public class Meeting {
     @Column(name = "name", length = 100)
     private String name;
 
-    @Column(name = "startTime", nullable = false)
+    @Column(name = "starttime", nullable = false)
     private LocalDateTime startTime;
 
-    @Column(name = "endTime", nullable = false)
+    @Column(name = "endtime", nullable = false)
     private LocalDateTime endTime;
 
     @Column(name = "date", length = 50, nullable = false)
@@ -40,6 +40,6 @@ public class Meeting {
     @Column(name = "month", insertable = false, updatable = false)
     private Integer month;
 
-    @Column(name = "date", insertable = false, updatable = false)
+    @Column(name = "day", insertable = false, updatable = false)
     private Integer day;
 } 

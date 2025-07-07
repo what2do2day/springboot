@@ -2,13 +2,11 @@ package com.couple.question_answer.service;
 
 import com.couple.question_answer.dto.UserAnswerRequest;
 import com.couple.question_answer.dto.UserAnswerResponse;
-import com.couple.question_answer.entity.QuestionTag;
+import com.couple.question_answer.entity.Question;
 import com.couple.question_answer.entity.UserAnswer;
-import com.couple.question_answer.entity.UserTagProfile;
-import com.couple.question_answer.entity.UserTagProfileId;
-import com.couple.question_answer.repository.QuestionTagRepository;
+import com.couple.question_answer.entity.VectorChange;
+import com.couple.question_answer.repository.QuestionRepository;
 import com.couple.question_answer.repository.UserAnswerRepository;
-import com.couple.question_answer.repository.UserTagProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -25,75 +22,70 @@ import java.util.stream.Collectors;
 public class UserAnswerService {
 
     private final UserAnswerRepository userAnswerRepository;
-    private final QuestionTagRepository questionTagRepository;
-    private final UserTagProfileRepository userTagProfileRepository;
+    private final QuestionRepository questionRepository;
+    private final UserVectorService userVectorService;
 
     public UserAnswerResponse submitAnswer(UUID userId, UUID coupleId, UserAnswerRequest request) {
-        log.info("사용자 답변 제출: userId={}, coupleId={}, questionId={}, selectedOption={}",
-                userId, coupleId, request.getQuestionId(), request.getSelectedOption());
+        log.info("답변 제출 요청 - userId: {}, coupleId: {}, questionId: {}, selectedChoice: {}",
+                userId, coupleId, request.getQuestionId(), request.getSelectedChoice());
 
-        // 답변 저장
+        // 1. 답변 저장
         UserAnswer userAnswer = UserAnswer.builder()
                 .userId(userId)
                 .questionId(request.getQuestionId())
                 .coupleId(coupleId)
-                .selectedOption(request.getSelectedOption())
+                .selectedChoice(request.getSelectedChoice())
                 .build();
 
         UserAnswer savedAnswer = userAnswerRepository.save(userAnswer);
+        log.info("답변 저장 완료: answerId={}", savedAnswer.getId());
 
-        // 태그 점수 업데이트
-        updateUserTagScores(userId, request.getQuestionId(), request.getSelectedOption());
+        // 2. 질문 조회하여 벡터 변경값 확인
+        Question question = questionRepository.findById(request.getQuestionId())
+                .orElseThrow(() -> new IllegalArgumentException("질문을 찾을 수 없습니다: " + request.getQuestionId()));
+
+        // 3. 선택한 답변에 따른 벡터 변경값 추출
+        List<VectorChange> vectorChanges = request.getSelectedChoice().equals("A")
+                ? question.getVectors_a()
+                : question.getVectors_b();
+
+        // 4. 사용자 벡터 업데이트
+        updateUserVectors(userId, vectorChanges);
 
         return convertToResponse(savedAnswer);
     }
 
-    public List<UserAnswerResponse> getUserAnswers(UUID userId) {
-        log.info("사용자 답변 조회: {}", userId);
+    private void updateUserVectors(UUID userId, List<VectorChange> vectorChanges) {
+        log.info("사용자 벡터 업데이트 시작 - userId: {}, vectorChanges: {}", userId, vectorChanges.size());
 
-        List<UserAnswer> answers = userAnswerRepository.findByUserId(userId);
-        return answers.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        for (VectorChange vectorChange : vectorChanges) {
+            try {
+                // 현재 벡터 값 조회
+                double currentValue = userVectorService.getCurrentVectorValue(userId, vectorChange.getDimension());
+
+                // 새로운 벡터 값 계산 (기존 값 + 변경값, -1.0 ~ 1.0 범위로 제한)
+                double newValue = Math.max(-1.0, Math.min(1.0, currentValue + vectorChange.getChange()));
+
+                // 벡터 업데이트
+                userVectorService.updateSpecificVector(userId, vectorChange.getDimension(), newValue);
+
+                log.info("벡터 업데이트 완료 - userId: {}, dimension: {}, currentValue: {}, change: {}, newValue: {}",
+                        userId, vectorChange.getDimension(), currentValue, vectorChange.getChange(), newValue);
+
+            } catch (Exception e) {
+                log.error("벡터 업데이트 실패 - userId: {}, dimension: {}, error: {}",
+                        userId, vectorChange.getDimension(), e.getMessage());
+            }
+        }
     }
 
-    private void updateUserTagScores(UUID userId, UUID questionId, String choice) {
-        log.info("사용자 태그 점수 업데이트: userId={}, questionId={}, choice={}",
-                userId, questionId, choice);
+    public List<UserAnswerResponse> getUserAnswers(UUID userId) {
+        log.info("사용자 답변 조회 - userId: {}", userId);
 
-        // 질문에 연결된 태그들 조회
-        List<QuestionTag> questionTags = questionTagRepository.findByQuestionId(questionId);
-
-        for (QuestionTag questionTag : questionTags) {
-            UUID tagId = questionTag.getId().getTagId();
-            Float tagValue = questionTag.getValue();
-
-            // 선택에 따라 점수 조정 (옵션1 선택 시 양수, 옵션2 선택 시 음수)
-            float scoreChange = "1".equals(choice) ? tagValue : -tagValue;
-
-            // 사용자 태그 프로필 조회 또는 생성
-            UserTagProfile userTagProfile = userTagProfileRepository
-                    .findByUserIdAndTagId(userId, tagId);
-
-            if (userTagProfile == null) {
-                // 새로운 프로필 생성
-                UserTagProfileId profileId = new UserTagProfileId();
-                profileId.setUserId(userId);
-                profileId.setTagId(tagId);
-                userTagProfile = UserTagProfile.builder()
-                        .id(profileId)
-                        .score(scoreChange)
-                        .build();
-            } else {
-                // 기존 점수에 추가
-                float newScore = userTagProfile.getScore() + scoreChange;
-                // -1 ~ +1 범위로 제한
-                newScore = Math.max(-1.0f, Math.min(1.0f, newScore));
-                userTagProfile.setScore(newScore);
-            }
-
-            userTagProfileRepository.save(userTagProfile);
-        }
+        List<UserAnswer> answers = userAnswerRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        return answers.stream()
+                .map(this::convertToResponse)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     private UserAnswerResponse convertToResponse(UserAnswer userAnswer) {
@@ -102,7 +94,7 @@ public class UserAnswerService {
                 .userId(userAnswer.getUserId())
                 .questionId(userAnswer.getQuestionId())
                 .coupleId(userAnswer.getCoupleId())
-                .selectedOption(userAnswer.getSelectedOption())
+                .selectedChoice(userAnswer.getSelectedChoice())
                 .createdAt(userAnswer.getCreatedAt())
                 .build();
     }

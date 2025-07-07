@@ -11,7 +11,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:
@@ -19,6 +19,10 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   profiles:
     active: local
+
+# 외부 서비스 URL 설정
+question-answer-service:
+  url: http://localhost:8086
 
 springdoc:
   api-docs:

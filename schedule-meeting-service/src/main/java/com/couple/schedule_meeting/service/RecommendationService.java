@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -27,15 +28,65 @@ public class RecommendationService {
     private static final String RECOMMENDATION_API_URL = "http://49.50.131.82:8000/api/v1/planner/generate-plan-vector";
     
     public RecommendationResponse getRecommendations(RecommendationRequest request) {
-        log.info("외부 추천 API 호출 시작: {}", request);
+        log.info("=== 외부 추천 API 호출 시작 ===");
+        log.info("요청 URL: {}", RECOMMENDATION_API_URL);
+        
+        // 요청 데이터 로깅 (취향벡터는 사이즈만)
+        log.info("요청 데이터:");
+        log.info("  - user1: gender={}, preferences.size={}", 
+                request.getUser1().getGender(), 
+                request.getUser1().getPreferences().size());
+        log.info("  - user2: gender={}, preferences.size={}", 
+                request.getUser2().getGender(), 
+                request.getUser2().getPreferences().size());
+        log.info("  - date: {}", request.getDate());
+        log.info("  - weather: {}", request.getWeather());
+        log.info("  - startTime: {}", request.getStartTime());
+        log.info("  - endTime: {}", request.getEndTime());
+        log.info("  - keywords: {}", request.getKeywords());
+        
+        // 취향벡터 샘플 로깅 (처음 5개만)
+        log.info("  - user1 preferences 샘플: {}", 
+                request.getUser1().getPreferences().entrySet().stream()
+                        .limit(5)
+                        .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+        log.info("  - user2 preferences 샘플: {}", 
+                request.getUser2().getPreferences().entrySet().stream()
+                        .limit(5)
+                        .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
         
         return webClient.post()
                 .uri(RECOMMENDATION_API_URL)
                 .bodyValue(request)
                 .retrieve()
                 .bodyToMono(RecommendationResponse.class)
-                .doOnSuccess(response -> log.info("외부 추천 API 호출 성공"))
-                .doOnError(error -> log.error("외부 추천 API 호출 실패: {}", error.getMessage()))
+                .doOnSuccess(response -> {
+                    log.info("=== 외부 추천 API 호출 성공 ===");
+                    if (response != null) {
+                        log.info("응답 데이터:");
+                        log.info("  - timeSlots.size: {}", 
+                                response.getTimeSlots() != null ? response.getTimeSlots().size() : "null");
+                        if (response.getTimeSlots() != null && !response.getTimeSlots().isEmpty()) {
+                            log.info("  - 첫 번째 timeSlot: slot={}, topCandidates.size={}", 
+                                    response.getTimeSlots().get(0).getSlot(),
+                                    response.getTimeSlots().get(0).getTopCandidates() != null ? 
+                                            response.getTimeSlots().get(0).getTopCandidates().size() : "null");
+                        }
+                    } else {
+                        log.warn("응답이 null입니다.");
+                    }
+                })
+                .doOnError(error -> {
+                    log.error("=== 외부 추천 API 호출 실패 ===");
+                    log.error("에러 메시지: {}", error.getMessage());
+                    if (error instanceof org.springframework.web.reactive.function.client.WebClientResponseException) {
+                        org.springframework.web.reactive.function.client.WebClientResponseException wcre = 
+                            (org.springframework.web.reactive.function.client.WebClientResponseException) error;
+                        log.error("HTTP 상태 코드: {}", wcre.getStatusCode());
+                        log.error("응답 본문: {}", wcre.getResponseBodyAsString());
+                        log.error("응답 헤더: {}", wcre.getHeaders());
+                    }
+                })
                 .block(); // 동기 호출로 변경 (필요시 Mono<RecommendationResponse>로 변경 가능)
     }
     
