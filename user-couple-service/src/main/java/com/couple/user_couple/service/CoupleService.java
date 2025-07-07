@@ -8,6 +8,7 @@ import com.couple.user_couple.dto.HomeInfoResponse;
 import com.couple.user_couple.dto.CoupleMemberResponse;
 import com.couple.user_couple.dto.UserResponse;
 import com.couple.user_couple.dto.CoupleInfoResponse;
+import com.couple.user_couple.dto.CoupleRankResponse;
 import com.couple.user_couple.entity.Couple;
 import com.couple.user_couple.entity.User;
 import com.couple.user_couple.repository.CoupleRepository;
@@ -410,5 +411,57 @@ public class CoupleService {
                                 coupleId, startDate, currentDate, daysSinceStart);
                 
                 return daysSinceStart;
+        }
+
+        /**
+         * 전체 커플의 점수 기준 랭킹을 조회합니다.
+         * 
+         * @return 커플 랭킹 리스트
+         */
+        public List<CoupleRankResponse> getCoupleRanks() {
+                log.info("커플 랭킹 조회 시작");
+
+                // 만료되지 않은 모든 커플 조회
+                List<Couple> couples = coupleRepository.findByExpired("N");
+                log.info("활성 커플 수: {}", couples.size());
+
+                // 커플별 랭킹 정보 생성 (매칭 완료된 커플만)
+                List<CoupleRankResponse> rankList = couples.stream()
+                                .map(couple -> {
+                                        // 커플의 사용자 조회
+                                        List<User> users = userRepository.findByCoupleId(couple.getId());
+                                        
+                                        // 사용자가 2명이 아닌 경우 null 반환 (나중에 필터링)
+                                        if (users.size() != 2) {
+                                                return null;
+                                        }
+                                        
+                                        // 커플의 총 점수 계산
+                                        long totalScore = users.stream()
+                                                        .mapToLong(user -> user.getScore() != null ? user.getScore() : 0L)
+                                                        .sum();
+
+                                        // 점수가 0 이하인 경우 null 반환 (나중에 필터링)
+                                        if (totalScore <= 0) {
+                                                return null;
+                                        }
+
+                                        return CoupleRankResponse.builder()
+                                                        .coupleName(couple.getName())
+                                                        .totalScore(totalScore)
+                                                        .rank(0) // 임시로 0 설정, 나중에 정렬 후 순위 부여
+                                                        .build();
+                                })
+                                .filter(rank -> rank != null) // null 값 제거
+                                .sorted((r1, r2) -> Long.compare(r2.getTotalScore(), r1.getTotalScore())) // 점수 내림차순 정렬
+                                .collect(java.util.stream.Collectors.toList());
+
+                // 순위 부여
+                for (int i = 0; i < rankList.size(); i++) {
+                        rankList.get(i).setRank(i + 1);
+                }
+
+                log.info("커플 랭킹 조회 완료: {}개 커플", rankList.size());
+                return rankList;
         }
 }
