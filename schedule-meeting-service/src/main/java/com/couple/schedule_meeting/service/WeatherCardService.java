@@ -14,6 +14,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -25,7 +26,9 @@ public class WeatherCardService {
     private static final int WEATHER_API_NUM_OF_ROWS = 1000;
     private static final int WEATHER_API_PAGE_NO = 1;
     private static final String WEATHER_API_DATA_TYPE = "JSON";
-    private static final String WEATHER_API_BASE_TIME = "0500";
+    
+    // 기상청 발표시각 (매일 02, 05, 08, 11, 14, 17, 20, 23시)
+    private static final int[] WEATHER_API_BASE_HOURS = {2, 5, 8, 11, 14, 17, 20, 23};
 
     @Value("${weather.api-key}")
     private String serviceKey;
@@ -36,13 +39,15 @@ public class WeatherCardService {
         int ny = grid.y;
         System.out.println("[DEBUG] 변환된 nx, ny = " + nx + ", " + ny);
         
-        // 한국 시간대 기준으로 현재 날짜와 시간 계산
+        // 현재 시간에 맞는 가장 최신의 발표시각 계산
         LocalDateTime koreaNow = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
-        String baseDate = koreaNow.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String baseTime = WEATHER_API_BASE_TIME;
+        LocalDateTime baseDateTime = calculateBaseDateTime(koreaNow);
+        String baseDate = baseDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String baseTime = baseDateTime.format(DateTimeFormatter.ofPattern("HHmm"));
         
         System.out.println("[DEBUG] 한국 시간 기준: " + koreaNow);
         System.out.println("[DEBUG] API 호출 baseDate: " + baseDate);
+        System.out.println("[DEBUG] API 호출 baseTime: " + baseTime);
 
         String urlStr = String.format(
                 WEATHER_API_BASE_URL +
@@ -85,6 +90,48 @@ public class WeatherCardService {
                 .forEach(e -> result.add(new WeatherCardResponse(e.getKey(), e.getValue().classifyWeather())));
 
         return result;
+    }
+
+    /**
+     * 현재 시간에 맞는 가장 최신의 기상청 발표시각을 계산합니다.
+     * 기상청 발표시각: 02, 05, 08, 11, 14, 17, 20, 23시
+     * 각 발표시각으로부터 +10시간 후에 해당 발표시각의 예보 데이터를 사용할 수 있습니다.
+     */
+    private LocalDateTime calculateBaseDateTime(LocalDateTime currentTime) {
+        LocalDate currentDate = currentTime.toLocalDate();
+        LocalTime currentTimeOfDay = currentTime.toLocalTime();
+        
+        // 현재 시간에서 10시간을 뺀 시간을 기준으로 계산
+        LocalDateTime adjustedTime = currentTime.minusHours(10);
+        
+        // 가장 최근의 발표시각 찾기
+        LocalDateTime baseDateTime = null;
+        
+        for (int i = WEATHER_API_BASE_HOURS.length - 1; i >= 0; i--) {
+            int baseHour = WEATHER_API_BASE_HOURS[i];
+            LocalDateTime candidateDateTime = LocalDateTime.of(currentDate, LocalTime.of(baseHour, 0));
+            
+            // 만약 오늘의 발표시각이 현재 시간보다 늦다면, 어제의 마지막 발표시각 사용
+            if (candidateDateTime.isAfter(adjustedTime)) {
+                if (i == 0) {
+                    // 첫 번째 발표시각(02시)보다 이전이면 어제의 마지막 발표시각(23시) 사용
+                    baseDateTime = LocalDateTime.of(currentDate.minusDays(1), LocalTime.of(23, 0));
+                } else {
+                    // 이전 발표시각 사용
+                    baseDateTime = LocalDateTime.of(currentDate, LocalTime.of(WEATHER_API_BASE_HOURS[i-1], 0));
+                }
+            } else {
+                baseDateTime = candidateDateTime;
+                break;
+            }
+        }
+        
+        // 만약 여전히 null이라면 (현재 시간이 오늘 02시 이전인 경우), 어제 23시 사용
+        if (baseDateTime == null) {
+            baseDateTime = LocalDateTime.of(currentDate.minusDays(1), LocalTime.of(23, 0));
+        }
+        
+        return baseDateTime;
     }
 
     private String fetchJson(String urlStr) throws Exception {
