@@ -297,8 +297,9 @@ public class CoupleService {
 
         /**
          * 사용자 ID로 커플 정보와 디데이를 조회합니다.
+         * 추천을 요청한 사람이 항상 user1이 되도록 합니다.
          * 
-         * @param userId 사용자 ID
+         * @param userId 사용자 ID (추천을 요청한 사람)
          * @return 커플 정보와 디데이
          */
         public CoupleInfoResponse getCoupleInfoByUserId(UUID userId) {
@@ -331,9 +332,14 @@ public class CoupleService {
                         throw new RuntimeException("커플 멤버가 부족합니다: " + couple.getId());
                 }
 
-                User user1 = users.get(0);
-                User user2 = users.get(1);
-                log.info("커플 멤버 정보: user1={}, user2={}", user1.getId(), user2.getId());
+                // 추천을 요청한 사람을 user1으로, 파트너를 user2로 할당
+                User user1 = user; // 추천을 요청한 사람
+                User user2 = users.stream()
+                                .filter(u -> !u.getId().equals(userId))
+                                .findFirst()
+                                .orElseThrow(() -> new RuntimeException("파트너를 찾을 수 없습니다: " + userId));
+                
+                log.info("커플 멤버 정보: user1(요청자)={}, user2(파트너)={}", user1.getId(), user2.getId());
 
                 CoupleInfoResponse response = CoupleInfoResponse.builder()
                                 .coupleId(couple.getId())
