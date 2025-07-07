@@ -45,3 +45,4 @@ out/
 **/certs/**
 
 **/deploy**.sh
+**/resources/**.json
