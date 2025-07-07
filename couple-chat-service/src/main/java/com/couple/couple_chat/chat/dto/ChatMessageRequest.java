@@ -1,4 +1,4 @@
-package com.couple.couple_chat.dto;
+package com.couple.couple_chat.chat.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

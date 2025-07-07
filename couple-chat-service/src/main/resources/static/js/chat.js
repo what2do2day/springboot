@@ -42,6 +42,7 @@ function updateStatus(connected) {
     
     messageInput.disabled = !connected;
     sendButton.disabled = !connected;
+    document.getElementById('locationButton').disabled = !connected;
 }
 
 // 메시지 추가
@@ -77,6 +78,99 @@ function addSystemMessage(message) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
+// 위치 공유 메시지 추가
+function addLocationMessage(locationMessage, isSent) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+    
+    const messageInfo = document.createElement('div');
+    messageInfo.className = 'message-info';
+    messageInfo.textContent = `${isSent ? currentUser.name : '상대방'} - ${new Date().toLocaleTimeString()}`;
+    
+    const locationContent = document.createElement('div');
+    locationContent.innerHTML = `
+        <div class="location-message">
+            <i class="fas fa-map-marker-alt text-danger"></i>
+            <strong>위치 공유</strong><br>
+            <small>위도: ${locationMessage.latitude}, 경도: ${locationMessage.longitude}</small><br>
+            ${locationMessage.address ? `<small>주소: ${locationMessage.address}</small><br>` : ''}
+            <button class="btn btn-sm btn-outline-primary mt-1" onclick="openLocationInMap(${locationMessage.latitude}, ${locationMessage.longitude})">
+                지도에서 보기
+            </button>
+        </div>
+    `;
+    
+    messageDiv.appendChild(messageInfo);
+    messageDiv.appendChild(locationContent);
+    
+    chatContainer.appendChild(messageDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    messageCount++;
+    document.getElementById('messageCount').textContent = messageCount;
+}
+
+// 지도에서 위치 열기
+function openLocationInMap(latitude, longitude) {
+    const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
+    window.open(url, '_blank');
+}
+
+// 현재 위치 공유
+function shareCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const locationRequest = {
+                    roomId: currentRoom,
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy || 10,
+                    address: '현재 위치',
+                    messageType: 'LOCATION'
+                };
+                
+                // WebSocket으로 전송
+                if (stompClient && stompClient.connected) {
+                    stompClient.send("/app/share-location", {}, JSON.stringify(locationRequest));
+                }
+                
+                // REST API로도 전송
+                shareLocationViaRest(locationRequest);
+                
+                addSystemMessage('현재 위치를 공유했습니다! 📍');
+            },
+            function(error) {
+                console.error('Geolocation error:', error);
+                addSystemMessage('위치를 가져올 수 없습니다.');
+            }
+        );
+    } else {
+        addSystemMessage('이 브라우저는 위치 서비스를 지원하지 않습니다.');
+    }
+}
+
+// REST API로 위치 공유
+async function shareLocationViaRest(locationRequest) {
+    try {
+        const serverUrl = document.getElementById('serverUrl').value;
+        const response = await fetch(`${serverUrl}/api/v1/location/share`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-User-ID': currentUser.id
+            },
+            body: JSON.stringify(locationRequest)
+        });
+        
+        if (!response.ok) {
+            console.error('Failed to share location via REST API');
+        }
+    } catch (error) {
+        console.error('Error sharing location via REST API:', error);
+    }
+}
+
 // WebSocket 연결
 function connectWebSocket() {
     updateUserInfo();
@@ -94,7 +188,20 @@ function connectWebSocket() {
         stompClient.subscribe(`/topic/chat/${currentRoom}`, function (message) {
             const chatMessage = JSON.parse(message.body);
             const isSent = chatMessage.senderId === currentUser.id;
-            addMessage(chatMessage.message, isSent, chatMessage.id);
+            
+            // 위치 공유 메시지 처리
+            if (chatMessage.messageType === 'LOCATION') {
+                addLocationMessage(chatMessage, isSent);
+            } else {
+                addMessage(chatMessage.message, isSent, chatMessage.id);
+            }
+        });
+        
+        // 위치 공유 토픽 구독
+        stompClient.subscribe(`/topic/location/${currentRoom}`, function (message) {
+            const locationMessage = JSON.parse(message.body);
+            const isSent = locationMessage.senderId === currentUser.id;
+            addLocationMessage(locationMessage, isSent);
         });
         
         // 개인 메시지 구독
