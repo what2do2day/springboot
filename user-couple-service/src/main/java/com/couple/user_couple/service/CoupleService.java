@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -37,6 +38,7 @@ public class CoupleService {
         private final CoupleRepository coupleRepository;
         private final UserRepository userRepository;
         private final StringRedisTemplate redisTemplate;
+        private final WebClient webClient;
 
         private static final String MATCH_CODE_PREFIX = "couple:match:";
         private static final int MATCH_CODE_EXPIRE_SECONDS = 300; // 5분
@@ -136,6 +138,15 @@ public class CoupleService {
 
                 // Redis에서 매칭 정보 삭제
                 redisTemplate.delete(redisKey);
+
+                // 채팅방 자동 생성
+                try {
+                    createChatRoom(savedCouple.getId(), requesterId, userId);
+                    log.info("채팅방 생성 완료: coupleId={}", savedCouple.getId());
+                } catch (Exception e) {
+                    log.error("채팅방 생성 실패: coupleId={}, error={}", savedCouple.getId(), e.getMessage());
+                    // 채팅방 생성 실패해도 커플 매칭은 성공으로 처리
+                }
 
                 // 응답 데이터 생성
                 Map<String, String> response = new HashMap<>();
@@ -294,6 +305,24 @@ public class CoupleService {
                                 .month(user.getMonth())
                                 .date(user.getDate())
                                 .build();
+        }
+
+        /**
+         * 채팅방 생성
+         */
+        private void createChatRoom(UUID coupleId, UUID user1Id, UUID user2Id) {
+                String url = "http://couple-chat-service:8084/api/couple-chat/rooms";
+                
+                webClient.post()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/api/couple-chat/rooms")
+                                .queryParam("coupleId", coupleId.toString())
+                                .queryParam("user1Id", user1Id.toString())
+                                .queryParam("user2Id", user2Id.toString())
+                                .build())
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .block(); // 동기 호출
         }
 
         /**
