@@ -1,6 +1,7 @@
 package com.couple.question_answer.controller;
 
 import com.couple.common.dto.ApiResponse;
+import com.couple.question_answer.dto.CoupleVectorsResponse;
 import com.couple.question_answer.dto.UserVectorRequest;
 import com.couple.question_answer.dto.UserVectorResponse;
 import com.couple.question_answer.service.UserVectorService;
@@ -99,5 +100,16 @@ public class UserVectorController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("벡터 조회 중 오류가 발생했습니다"));
         }
+    }
+
+    @GetMapping("/couple-vectors")
+    public ResponseEntity<ApiResponse<CoupleVectorsResponse>> getCoupleVectors(
+            @RequestHeader("X-User-ID") String userId,
+            @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
+        log.info("커플 벡터 조회 요청 - userId: {}, coupleId: {}", userId, coupleId);
+
+        UUID userIdUUID = UUID.fromString(userId);
+        CoupleVectorsResponse response = userVectorService.getCoupleVectors(userIdUUID);
+        return ResponseEntity.ok(ApiResponse.success("커플 벡터 조회 성공", response));
     }
 }

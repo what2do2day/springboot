@@ -13,6 +13,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -33,8 +35,14 @@ public class WeatherCardService {
         int nx = grid.x;
         int ny = grid.y;
         System.out.println("[DEBUG] 변환된 nx, ny = " + nx + ", " + ny);
-        String baseDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        
+        // 한국 시간대 기준으로 현재 날짜와 시간 계산
+        LocalDateTime koreaNow = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+        String baseDate = koreaNow.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String baseTime = WEATHER_API_BASE_TIME;
+        
+        System.out.println("[DEBUG] 한국 시간 기준: " + koreaNow);
+        System.out.println("[DEBUG] API 호출 baseDate: " + baseDate);
 
         String urlStr = String.format(
                 WEATHER_API_BASE_URL +
@@ -60,7 +68,12 @@ public class WeatherCardService {
             String value = item.get("fcstValue").asText();
 
             LocalDate itemDate = LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE);
-            if (itemDate.isAfter(LocalDate.now().plusDays(4)) || itemDate.isBefore(LocalDate.now())) continue;
+            LocalDate koreaToday = LocalDate.now(ZoneId.of("Asia/Seoul"));
+            
+            if (itemDate.isAfter(koreaToday.plusDays(4)) || itemDate.isBefore(koreaToday)) {
+                System.out.println("[DEBUG] 날짜 필터링 제외: " + itemDate);
+                continue;
+            }
 
             summaries.putIfAbsent(date, new DailySimpleSummary(date));
             summaries.get(date).update(category, value);

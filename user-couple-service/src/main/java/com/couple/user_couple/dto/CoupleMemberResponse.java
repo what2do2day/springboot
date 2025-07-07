@@ -13,6 +13,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CoupleMemberResponse {
     private UUID userId;
+    private UUID coupleId;
     private String gender;
     private String birth;
 }

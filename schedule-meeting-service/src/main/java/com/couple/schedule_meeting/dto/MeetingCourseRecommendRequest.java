@@ -11,6 +11,8 @@ public class MeetingCourseRecommendRequest {
     private LocalDate date;
     private List<String> keyword;
     private String weather;
+    private String currentLat;
+    private String currentLon;
 
     public MeetingCourseRecommendRequest() {
     }
@@ -61,5 +63,21 @@ public class MeetingCourseRecommendRequest {
 
     public void setWeather(String weather) {
         this.weather = weather;
+    }
+
+    public String getCurrentLat() {
+        return currentLat;
+    }
+
+    public void setCurrentLat(String currentLat) {
+        this.currentLat = currentLat;
+    }
+
+    public String getCurrentLon() {
+        return currentLon;
+    }
+
+    public void setCurrentLon(String currentLon) {
+        this.currentLon = currentLon;
     }
 } 

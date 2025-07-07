@@ -6,8 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
@@ -19,10 +17,10 @@ public class RecommendationRequest {
     
     private UserInfo user1;
     private UserInfo user2;
-    private LocalDate date;
+    private String date;
     private String weather;
-    private LocalTime startTime;
-    private LocalTime endTime;
+    private String startTime;
+    private String endTime;
     private List<String> keywords;
     
     @Data

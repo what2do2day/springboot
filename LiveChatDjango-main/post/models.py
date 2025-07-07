@@ -12,7 +12,7 @@ class Tag(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=45)
-    
+
     def __str__(self):
         return self.name
 
@@ -30,7 +30,7 @@ class Post(models.Model):
 
     def __str__(self):
         return self.title
-    
+
     @property
     def update_counter(self):
         self.hit += 1
