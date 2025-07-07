@@ -15,9 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpEntity;
 
 import java.util.UUID;
 import java.time.LocalDateTime;
@@ -33,7 +32,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final CoupleRepository coupleRepository;
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
 
     public UserResponse signup(UserSignupRequest request) {
         log.info("회원가입 요청: {}", request.getEmail());
@@ -80,11 +79,13 @@ public class UserService {
     private void createUserVector(UUID userId) {
         try {
             String url = "http://localhost:8086/api/user-vectors";
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-User-ID", userId.toString());
-
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-            restTemplate.postForObject(url, entity, Object.class);
+            
+            webClient.post()
+                    .uri(url)
+                    .header("X-User-ID", userId.toString())
+                    .retrieve()
+                    .bodyToMono(Object.class)
+                    .block();
         } catch (Exception e) {
             log.error("벡터 생성 API 호출 실패: {}", e.getMessage());
             throw e;
