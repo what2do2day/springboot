@@ -1,0 +1,150 @@
+name: Build, Push and Deploy with ConfigMap
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: '배포할 서비스 이름'
+        required: true
+        default: 'gateway-service'
+      image_tag:
+        description: '도커 이미지 태그 (옵션, 기본 "latest")'
+        required: false
+        default: 'latest'
+
+  #push:
+  #  branches:
+  #    - main
+  #    - 'deploy/#16'
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_ACCOUNT_URL: 624227064848.dkr.ecr.ap-northeast-2.amazonaws.com
+  EKS_CLUSTER_NAME: hilarious-jazz-outfit
+  AWS_PROFILE: github-actions-user
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install AWS CLI v2
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install --update
+          aws --version
+
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Write AWS credentials manually
+        run: |
+          mkdir -p ~/.aws
+          echo "[github-actions-user]" > ~/.aws/credentials
+          echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
+          echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+
+      - name: Check IAM identity
+        run: aws sts get-caller-identity --profile $AWS_PROFILE
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Determine service and image tag
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            SERVICE="${{ github.event.inputs.service }}"
+            if [ -z "$SERVICE" ]; then
+              SERVICE="gateway-service"
+            fi
+            IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)
+          else
+            SERVICE="${{ github.event.inputs.service }}"
+            IMAGE_TAG="${{ github.event.inputs.image_tag }}"
+            if [ -z "$SERVICE" ]; then
+              SERVICE="gateway-service"
+            fi
+            if [ -z "$IMAGE_TAG" ]; then
+              IMAGE_TAG="latest"
+            fi
+          fi
+          echo "SERVICE=$SERVICE" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Build JAR if Java service
+        if: env.SERVICE == 'gateway-service' || env.SERVICE == 'question-answer-service' || env.SERVICE == 'schedule-meeting-service' || env.SERVICE == 'user-couple-service'
+        run: ./gradlew clean build -x test -p $SERVICE
+
+      - name: Build & Push Docker Image
+        run: |
+          docker build -t $ECR_ACCOUNT_URL/$SERVICE:$IMAGE_TAG ./$SERVICE
+          docker push $ECR_ACCOUNT_URL/$SERVICE:$IMAGE_TAG
+
+      - name: Create application.yml from secret
+        run: |
+          case "$SERVICE" in
+            gateway-service)
+              echo "${{ secrets.APP_CONFIG_GATEWAY_SERVICE }}" > application.yml
+              ;;
+            question-answer-service)
+              echo "${{ secrets.APP_CONFIG_QUESTION_ANSWER_SERVICE }}" > application.yml
+              ;;
+            schedule-meeting-service)
+              echo "${{ secrets.APP_CONFIG_SCHEDULE_MEETING_SERVICE }}" > application.yml
+              ;;
+            user-couple-service)
+              echo "${{ secrets.APP_CONFIG_USER_COUPLE_SERVICE }}" > application.yml
+              ;;
+            *)
+              echo "No secret found for $SERVICE"
+              exit 1
+              ;;
+          esac
+
+      - name: Generate kubeconfig with embedded token
+        run: |
+          ENDPOINT=$(aws eks describe-cluster \
+            --name $EKS_CLUSTER_NAME \
+            --region $AWS_REGION \
+            --profile $AWS_PROFILE \
+            --query "cluster.endpoint" --output text)
+
+          CERT=$(aws eks describe-cluster \
+            --name $EKS_CLUSTER_NAME \
+            --region $AWS_REGION \
+            --profile $AWS_PROFILE \
+            --query "cluster.certificateAuthority.data" --output text | base64 --decode > ca.crt && echo ca.crt)
+
+          TOKEN=$(aws eks get-token \
+            --region $AWS_REGION \
+            --cluster-name $EKS_CLUSTER_NAME \
+            --profile $AWS_PROFILE \
+            --output json | jq -r '.status.token')
+
+          kubectl config set-cluster $EKS_CLUSTER_NAME \
+            --server=$ENDPOINT \
+            --certificate-authority=ca.crt
+
+          kubectl config set-credentials github-actions-user --token=$TOKEN
+
+          kubectl config set-context default \
+            --cluster=$EKS_CLUSTER_NAME \
+            --user=github-actions-user
+
+          kubectl config use-context default
+
+      - name: Apply ConfigMap with application.yml
+        run: |
+          kubectl create configmap $SERVICE-config --from-file=application.yml --dry-run=client -o yaml | kubectl apply --validate=false -f -
+
+      - name: Deploy to EKS
+        run: |
+          kubectl set image deployment/$SERVICE $SERVICE=$ECR_ACCOUNT_URL/$SERVICE:$IMAGE_TAG
+          kubectl rollout status deployment/$SERVICE

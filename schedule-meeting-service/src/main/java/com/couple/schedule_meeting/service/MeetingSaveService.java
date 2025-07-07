@@ -24,6 +24,7 @@ public class MeetingSaveService {
     private final MeetingPlaceRepository meetingPlaceRepository;
     private final MeetingKeywordRepository meetingKeywordRepository;
     private final RouteRepository routeRepository;
+    private final PlaceRepository placeRepository;
 
     /**
      * TmpMeeting 문서를 조회하여 Meeting, MeetingPlaces, MeetingKeywords, Route를 저장
@@ -105,11 +106,16 @@ public class MeetingSaveService {
     private void saveMeetingPlacesFromTmpMeeting(TmpMeeting tmpMeeting, UUID meetingId) {
         if (tmpMeeting.getStores() != null && !tmpMeeting.getStores().isEmpty()) {
             List<MeetingPlace> meetingPlaces = tmpMeeting.getStores().stream()
-                    .map(storeName -> MeetingPlace.builder()
-                            .meetingId(meetingId)
-                            .name(storeName)
-                            .sequence(tmpMeeting.getStores().indexOf(storeName) + 1)
-                            .build())
+                    .map(storeName -> {
+                        Place place = placeRepository.findByName(storeName)
+                                .orElse(null);
+                        
+                        return MeetingPlace.builder()
+                                .meetingId(meetingId)
+                                .place(place)
+                                .sequence(tmpMeeting.getStores().indexOf(storeName) + 1)
+                                .build();
+                    })
                     .collect(Collectors.toList());
             
             meetingPlaceRepository.saveAll(meetingPlaces);
