@@ -15,13 +15,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/questions")
 @RequiredArgsConstructor
-
 public class QuestionController {
 
     private final QuestionService questionService;
@@ -50,7 +48,7 @@ public class QuestionController {
 
     @GetMapping("/{questionId}")
     public ResponseEntity<ApiResponse<QuestionResponse>> getQuestionById(
-            @PathVariable UUID questionId,
+            @PathVariable String questionId,
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
         log.info("질문 상세 조회 - userId: {}, coupleId: {}, questionId: {}", userId, coupleId, questionId);
@@ -60,36 +58,25 @@ public class QuestionController {
     }
 
     @GetMapping("/date/{date}")
-    public ResponseEntity<ApiResponse<List<QuestionResponse>>> getQuestionsByDate(
+    public ResponseEntity<ApiResponse<QuestionResponse>> getQuestionByDate(
             @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
         log.info("날짜별 질문 조회 - userId: {}, coupleId: {}, date: {}", userId, coupleId, date);
 
-        List<QuestionResponse> questions = questionService.getQuestionsByDate(date);
-        return ResponseEntity.ok(ApiResponse.success("날짜별 질문 조회 성공", questions));
+        QuestionResponse response = questionService.getQuestionByDate(date);
+        return ResponseEntity.ok(ApiResponse.success("날짜별 질문 조회 성공", response));
     }
 
-    @GetMapping("/unsent/{date}")
-    public ResponseEntity<ApiResponse<List<QuestionResponse>>> getUnsentQuestionsByDate(
+    @GetMapping("/date/{date}/list")
+    public ResponseEntity<ApiResponse<List<QuestionResponse>>> getQuestionsByDate(
             @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
-        log.info("미전송 질문 조회 - userId: {}, coupleId: {}, date: {}", userId, coupleId, date);
+        log.info("날짜별 질문 목록 조회 - userId: {}, coupleId: {}, date: {}", userId, coupleId, date);
 
-        List<QuestionResponse> questions = questionService.getUnsentQuestionsByDate(date);
-        return ResponseEntity.ok(ApiResponse.success("미전송 질문 조회 성공", questions));
-    }
-
-    @PutMapping("/{questionId}/mark-sent")
-    public ResponseEntity<ApiResponse<String>> markQuestionAsSent(
-            @PathVariable UUID questionId,
-            @RequestHeader("X-User-ID") String userId,
-            @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
-        log.info("질문 전송 완료 처리 - userId: {}, coupleId: {}, questionId: {}", userId, coupleId, questionId);
-
-        questionService.markQuestionAsSent(questionId);
-        return ResponseEntity.ok(ApiResponse.success("질문 전송 완료 처리 성공", null));
+        List<QuestionResponse> questions = questionService.getQuestionsByDate(date);
+        return ResponseEntity.ok(ApiResponse.success("날짜별 질문 목록 조회 성공", questions));
     }
 
     @GetMapping("/test-headers")

@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.List;
 
 @Data
 @Builder
@@ -15,13 +15,12 @@ import java.util.UUID;
 @AllArgsConstructor
 public class QuestionResponse {
 
-    private UUID id;
+    private String id;
     private String question;
-    private String option1;
-    private String option2;
-    private String sentYn;
-    private LocalDateTime sentTime;
     private LocalDate date;
+    private String choiceA;
+    private String choiceB;
+    private List<String> tags;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

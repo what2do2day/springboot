@@ -15,6 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpEntity;
 
 import java.util.UUID;
 import java.time.LocalDateTime;
@@ -30,6 +33,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final CoupleRepository coupleRepository;
+    private final RestTemplate restTemplate;
 
     public UserResponse signup(UserSignupRequest request) {
         log.info("회원가입 요청: {}", request.getEmail());
@@ -59,7 +63,32 @@ public class UserService {
         user.setDate(request.getBirth().getDayOfMonth());
 
         User savedUser = userRepository.save(user);
+
+        // 계정 생성 후 벡터 자동 생성
+        try {
+            createUserVector(savedUser.getId());
+            log.info("사용자 벡터 생성 완료: userId={}", savedUser.getId());
+        } catch (Exception e) {
+            log.error("사용자 벡터 생성 실패: userId={}, error={}", savedUser.getId(), e.getMessage());
+            // 벡터 생성 실패해도 회원가입은 성공으로 처리
+        }
+
         return convertToResponse(savedUser);
+    }
+
+    // 사용자 벡터 생성 메서드
+    private void createUserVector(UUID userId) {
+        try {
+            String url = "http://localhost:8086/api/user-vectors";
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-User-ID", userId.toString());
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            restTemplate.postForObject(url, entity, Object.class);
+        } catch (Exception e) {
+            log.error("벡터 생성 API 호출 실패: {}", e.getMessage());
+            throw e;
+        }
     }
 
     public UserResponse login(LoginRequest request) {

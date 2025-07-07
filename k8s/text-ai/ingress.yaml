@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: text-ai-ingress
+spec:
+  rules:
+    - host: 49.50.131.82
+      http:
+        paths:
+          - path: /docs
+            pathType: Prefix
+            backend:
+              service:
+                name: text-ai
+                port:
+                  number: 8003 

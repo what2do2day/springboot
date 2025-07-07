@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: livechatdjango-ingress
+spec:
+  rules:
+    - host: livechatdjango.49.50.131.82
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: livechatdjango
+                port:
+                  number: 8000 

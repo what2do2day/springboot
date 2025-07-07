@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Builder
@@ -18,12 +19,20 @@ public class QuestionRequest {
     @NotBlank(message = "질문은 필수입니다.")
     private String question;
 
-    @NotBlank(message = "옵션1은 필수입니다.")
-    private String option1;
-
-    @NotBlank(message = "옵션2는 필수입니다.")
-    private String option2;
-
-    @NotNull(message = "전송 예정일은 필수입니다.")
+    @NotNull(message = "날짜는 필수입니다.")
     private LocalDate date;
+
+    @NotBlank(message = "선택지 A는 필수입니다.")
+    private String choice_a;
+
+    @NotNull(message = "벡터 A는 필수입니다.")
+    private List<VectorChangeDto> vectors_a;
+
+    @NotBlank(message = "선택지 B는 필수입니다.")
+    private String choice_b;
+
+    @NotNull(message = "벡터 B는 필수입니다.")
+    private List<VectorChangeDto> vectors_b;
+
+    private List<String> tags;
 }
