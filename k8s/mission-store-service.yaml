@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mission-store-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mission-store-service
+  template:
+    metadata:
+      labels:
+        app: mission-store-service
+    spec:
+      containers:
+        - name: mission-store-service
+          image: 624227064848.dkr.ecr.ap-northeast-2.amazonaws.com/mission-store-service:latest
+          ports:
+            - containerPort: 8088
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mission-store-service
+spec:
+  selector:
+    app: mission-store-service
+  ports:
+    - port: 8088
+      targetPort: 8088
+  type: ClusterIP 
