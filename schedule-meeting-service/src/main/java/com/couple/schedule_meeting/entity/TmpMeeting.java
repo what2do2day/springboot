@@ -24,6 +24,9 @@ public class TmpMeeting {
     private String endTime;
     private String date;
     private List<String> keyword;
+    private String weather;
+    private String currentLat;
+    private String currentLon;
     private MeetingResults results;
     private List<String> stores;
     

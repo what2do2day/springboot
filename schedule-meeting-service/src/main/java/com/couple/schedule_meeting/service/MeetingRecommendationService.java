@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,10 +43,10 @@ public class MeetingRecommendationService {
             
             // 1. 커플 취향 정보 조회 (기본 정보 + 취향 벡터)
             log.info("커플 취향 정보 조회 시작");
-                    CoupleInfo coupleInfo = userInfoService.getCoupleInfoByUserId(userId);
+            CoupleInfo coupleInfo = userInfoService.getCoupleInfoByUserId(userId);
 
-        UserInfo user1Info = coupleInfo.getUser1();
-        UserInfo user2Info = coupleInfo.getUser2();
+            UserInfo user1Info = coupleInfo.getUser1();
+            UserInfo user2Info = coupleInfo.getUser2();
             
             // 2. RecommendationRequest 생성
             RecommendationRequest recommendationRequest = RecommendationRequest.builder()
@@ -91,16 +92,31 @@ public class MeetingRecommendationService {
             
             log.info("위도/경도 리스트 생성 완료: {}개 장소", coordinates.size());
             
-            // 6. 상세 경로 생성
-            log.info("상세 경로 생성 시작");
+            // 6. 상세 경로 생성 (출발지 포함)
+            log.info("상세 경로 생성 시작 (출발지 포함)");
+            List<WaypointRouteRequest.LocationCoordinate> waypoints = new ArrayList<>();
+            
+            // 출발지 추가 (currentLat, currentLon이 제공된 경우)
+            if (request.getCurrentLat() != null && request.getCurrentLon() != null) {
+                waypoints.add(WaypointRouteRequest.LocationCoordinate.builder()
+                        .name("출발지")
+                        .lon(request.getCurrentLon())
+                        .lat(request.getCurrentLat())
+                        .build());
+                log.info("출발지 추가: ({}, {})", request.getCurrentLat(), request.getCurrentLon());
+            }
+            
+            // 추천된 장소들 추가
+            waypoints.addAll(coordinates.stream()
+                    .map(coord -> WaypointRouteRequest.LocationCoordinate.builder()
+                            .name(coord.getStoreName())
+                            .lon(coord.getLongitude().toString())
+                            .lat(coord.getLatitude().toString())
+                            .build())
+                    .collect(Collectors.toList()));
+            
             WaypointRouteRequest waypointRequest = WaypointRouteRequest.builder()
-                    .waypoints(coordinates.stream()
-                            .map(coord -> WaypointRouteRequest.LocationCoordinate.builder()
-                                    .name(coord.getStoreName())
-                                    .lon(coord.getLongitude().toString())
-                                    .lat(coord.getLatitude().toString())
-                                    .build())
-                            .collect(Collectors.toList()))
+                    .waypoints(waypoints)
                     .routeType("fastest")
                     .build();
             
@@ -111,7 +127,7 @@ public class MeetingRecommendationService {
                 throw new RuntimeException("상세 경로 생성 실패");
             }
             
-            log.info("상세 경로 생성 완료: {}개 segment", routeResponse.getSegments().size());
+            log.info("상세 경로 생성 완료: {}개 segment (출발지 포함)", routeResponse.getSegments().size());
             
             // 7. TmpMeeting 문서 생성
             TmpMeeting.MeetingResults results = TmpMeeting.MeetingResults.builder()
@@ -125,6 +141,9 @@ public class MeetingRecommendationService {
                     .endTime(request.getEndTime().toString())
                     .date(request.getDate().toString())
                     .keyword(request.getKeyword())
+                    .weather(request.getWeather())
+                    .currentLat(request.getCurrentLat())
+                    .currentLon(request.getCurrentLon())
                     .results(results)
                     .stores(topStores) // 1순위 스토어들의 이름 추가
                     .build();
