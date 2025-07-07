@@ -59,11 +59,18 @@ public class GatewayConfig {
                                                                 .rewritePath("/api/(?<segment>.*)", "/api/${segment}")
                                                                 .addRequestHeader("X-Response-Time",
                                                                                 System.currentTimeMillis() + "")
-                                                                .addRequestHeader("X-User-ID", "${X-User-ID}")
-                                                                .addRequestHeader("X-Couple-ID", "${X-Couple-ID}")
                                                                 .filter(jwtFilter.apply(
                                                                                 new JwtAuthenticationFilter.Config())))
                                                 .uri("http://livechat-django:8000"))
+                                .route("mission-store-service", r -> r
+                                                .path("/api/missions/**", "/api/shop/**")
+                                                .filters(f -> f
+                                                                .rewritePath("/api/(?<segment>.*)", "/api/${segment}")
+                                                                .addRequestHeader("X-Response-Time",
+                                                                                System.currentTimeMillis() + "")
+                                                                .filter(jwtFilter.apply(
+                                                                                new JwtAuthenticationFilter.Config())))
+                                                .uri("http://mission-store-service:8088"))
                                 .route("django-websocket", r -> r
                                                 .path("/ws/**")
                                                 .filters(f -> f
