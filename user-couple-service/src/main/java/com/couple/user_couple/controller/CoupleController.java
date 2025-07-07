@@ -32,15 +32,15 @@ public class CoupleController {
     private final CoupleService coupleService;
 
     @PostMapping("/match")
-    @Operation(summary = "커플 매칭 코드 생성", description = "커플 매칭을 위한 코드를 생성합니다.")
+    @Operation(summary = "커플 매칭 코드 생성", description = "커플 매칭을 위한 코드를 생성하고 새로운 토큰을 반환합니다.")
     public ResponseEntity<ApiResponse<Map<String, String>>> generateMatchCode(
             @Parameter(description = "사용자 ID", example = "123e4567-e89b-12d3-a456-426614174000") @RequestHeader("X-User-ID") String userId,
             @Valid @RequestBody CoupleMatchRequest request) {
 
-        String matchCode = coupleService.generateMatchCode(UUID.fromString(userId), request);
+        Map<String, String> response = coupleService.generateMatchCode(UUID.fromString(userId), request);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("matchCode", matchCode);
+        log.info("매칭 코드 생성 완료 - 매칭 코드: {}, 새로운 토큰: {}",
+                response.get("matchCode"), response.get("newToken"));
 
         return ResponseEntity.ok(ApiResponse.success("매칭 코드가 생성되었습니다.", response));
     }
@@ -51,11 +51,9 @@ public class CoupleController {
             @Parameter(description = "사용자 ID", example = "123e4567-e89b-12d3-a456-426614174000") @RequestHeader("X-User-ID") String userId,
             @Valid @RequestBody CoupleMatchAcceptRequest request) {
 
-        String newToken = coupleService.acceptMatchCode(UUID.fromString(userId), request);
+        Map<String, String> response = coupleService.acceptMatchCode(UUID.fromString(userId), request);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("accessToken", newToken);
-        response.put("message", "커플 매칭이 완료되었습니다. 새로운 토큰을 사용해주세요.");
+        log.info("커플 매칭 완료 - 새로운 토큰: {}", response.get("newToken"));
 
         return ResponseEntity.ok(ApiResponse.success("커플 매칭이 완료되었습니다.", response));
     }
