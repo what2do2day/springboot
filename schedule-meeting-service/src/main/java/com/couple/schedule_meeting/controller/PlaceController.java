@@ -1,6 +1,7 @@
 package com.couple.schedule_meeting.controller;
 
 import com.couple.common.dto.ApiResponse;
+import com.couple.schedule_meeting.dto.PlaceRankResponse;
 import com.couple.schedule_meeting.dto.PlaceResponse;
 import com.couple.schedule_meeting.entity.Place;
 import com.couple.schedule_meeting.service.PlaceService;
@@ -25,7 +26,7 @@ public class PlaceController {
     }
     
     @GetMapping("/ranks")
-    public ResponseEntity<ApiResponse<List<PlaceResponse>>> getPlaceRanks(
+    public ResponseEntity<ApiResponse<List<PlaceRankResponse>>> getPlaceRanks(
             @RequestParam double lat,
             @RequestParam double lon,
             @RequestParam String code) {
@@ -41,7 +42,7 @@ public class PlaceController {
             return ResponseEntity.badRequest().body(ApiResponse.error("Invalid code. Must be 'P' or 'F'"));
         }
         
-        List<PlaceResponse> places = placeService.getPlaceRanks(lat, lon, code);
+        List<PlaceRankResponse> places = placeService.getPlaceRanks(lat, lon, code);
         return ResponseEntity.ok(ApiResponse.success("장소 랭킹 조회 성공", places));
     }
 } 

@@ -1,6 +1,7 @@
 package com.couple.schedule_meeting.service;
 
 import com.couple.schedule_meeting.dto.KakaoRegionResponse;
+import com.couple.schedule_meeting.dto.PlaceRankResponse;
 import com.couple.schedule_meeting.dto.PlaceResponse;
 import com.couple.schedule_meeting.entity.Place;
 import com.couple.schedule_meeting.repository.PlaceRepository;
@@ -24,7 +25,7 @@ public class PlaceService {
                 .orElseThrow(() -> new RuntimeException("Place not found with id: " + placeId));
     }
     
-    public List<PlaceResponse> getPlaceRanks(double lat, double lon, String code) {
+    public List<PlaceRankResponse> getPlaceRanks(double lat, double lon, String code) {
         log.info("장소 랭킹 조회 시작 - lat: {}, lon: {}, code: {}", lat, lon, code);
         
         // Kakao API를 통해 좌표를 행정구역으로 변환
@@ -84,11 +85,12 @@ public class PlaceService {
         
         log.info("데이터베이스 조회 완료 - 조회된 장소 수: {}", places.size());
         
-        List<PlaceResponse> responses = places.stream()
+        List<PlaceRankResponse> responses = places.stream()
                 .map(place -> {
-                    PlaceResponse response = PlaceResponse.from(place);
-                    log.debug("장소 정보 - id: {}, name: {}, address: {}, rating: {}", 
-                            response.getId(), response.getName(), response.getAddress(), response.getRating());
+                    PlaceRankResponse response = PlaceRankResponse.from(place);
+                    log.debug("장소 정보 - id: {}, name: {}, address: {}, rating: {}, lat: {}, lon: {}", 
+                            response.getId(), response.getName(), response.getAddress(), response.getRating(),
+                            response.getLatitude(), response.getLongitude());
                     return response;
                 })
                 .collect(Collectors.toList());
