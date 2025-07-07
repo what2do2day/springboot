@@ -59,7 +59,7 @@ public class UserVectorService {
 
             // 벡터 키 검증
             if (!userVector.isValidVectorKey(key)) {
-                throw new IllegalArgumentException("잘못된 벡터 키입니다: " + key + " (vec1 ~ vec50만 허용)");
+                throw new IllegalArgumentException("잘못된 벡터 키입니다: " + key + " (vec_1 ~ vec_50만 허용)");
             }
 
             // 벡터 값 검증
@@ -84,7 +84,7 @@ public class UserVectorService {
 
         // 벡터 키 검증
         if (!userVector.isValidVectorKey(vectorKey)) {
-            throw new IllegalArgumentException("잘못된 벡터 키입니다: " + vectorKey + " (vec1 ~ vec50만 허용)");
+            throw new IllegalArgumentException("잘못된 벡터 키입니다: " + vectorKey + " (vec_1 ~ vec_50만 허용)");
         }
 
         // 벡터 값 검증
@@ -97,6 +97,16 @@ public class UserVectorService {
 
         log.info("특정 벡터 업데이트 완료: userId={}, vectorKey={}, value={}", userId, vectorKey, value);
         return convertToResponse(savedVector);
+    }
+
+    public double getCurrentVectorValue(UUID userId, String vectorKey) {
+        log.info("현재 벡터 값 조회: userId={}, vectorKey={}", userId, vectorKey);
+
+        UserVector userVector = userVectorRepository.findByUserId(userId)
+                .orElseGet(() -> UserVector.createInitialVector(userId));
+
+        Map<String, Double> vectors = userVector.getVectors();
+        return vectors.getOrDefault(vectorKey, 0.0);
     }
 
     public void deleteUserVector(UUID userId) {

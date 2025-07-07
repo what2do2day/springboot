@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: generate-question
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: generate-question
+  template:
+    metadata:
+      labels:
+        app: generate-question
+    spec:
+      containers:
+        - name: generate-question
+          image: hyundae.kr.ncr.ntruss.com/ai-services/generate-question:latest
+          ports:
+            - containerPort: 8001 

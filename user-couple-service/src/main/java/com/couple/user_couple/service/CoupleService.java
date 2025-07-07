@@ -1,5 +1,6 @@
 package com.couple.user_couple.service;
 
+import com.couple.common.security.JwtTokenProvider;
 import com.couple.user_couple.dto.CoupleDateRequest;
 import com.couple.user_couple.dto.CoupleMatchRequest;
 import com.couple.user_couple.dto.CoupleMatchAcceptRequest;
@@ -10,8 +11,10 @@ import com.couple.user_couple.dto.UserResponse;
 import com.couple.user_couple.dto.CoupleInfoResponse;
 import com.couple.user_couple.entity.Couple;
 import com.couple.user_couple.entity.User;
+import com.couple.user_couple.entity.UserToken;
 import com.couple.user_couple.repository.CoupleRepository;
 import com.couple.user_couple.repository.UserRepository;
+import com.couple.user_couple.repository.UserTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -24,6 +27,8 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @Slf4j
 @Service
@@ -33,12 +38,14 @@ public class CoupleService {
 
         private final CoupleRepository coupleRepository;
         private final UserRepository userRepository;
+        private final UserTokenRepository userTokenRepository;
         private final StringRedisTemplate redisTemplate;
+        private final JwtTokenProvider jwtTokenProvider;
 
         private static final String MATCH_CODE_PREFIX = "couple:match:";
         private static final int MATCH_CODE_EXPIRE_SECONDS = 300; // 5분
 
-        public String generateMatchCode(UUID userId, CoupleMatchRequest request) {
+        public Map<String, String> generateMatchCode(UUID userId, CoupleMatchRequest request) {
                 log.info("커플 매칭 코드 생성 요청: {}", userId);
 
                 // 사용자 확인
@@ -50,21 +57,70 @@ public class CoupleService {
                         throw new RuntimeException("이미 커플이 있는 사용자입니다.");
                 }
 
+                // 커플 미리 생성
+                Couple.CoupleBuilder coupleBuilder = Couple.builder()
+                                .name(request.getName())
+                                .expired("N");
+                if (request.getStartDate() != null) {
+                        coupleBuilder.startDate(request.getStartDate().atStartOfDay());
+                        coupleBuilder.year(request.getStartDate().getYear());
+                        coupleBuilder.month(request.getStartDate().getMonthValue());
+                        coupleBuilder.date(request.getStartDate().getDayOfMonth());
+                } else {
+                        coupleBuilder.startDate(java.time.LocalDateTime.now());
+                }
+                Couple savedCouple = coupleRepository.save(coupleBuilder.build());
+
+                // 사용자 A를 커플에 포함
+                user.setCoupleId(savedCouple.getId());
+                userRepository.save(user);
+
+                // totalScores 갱신
+                var users = userRepository.findByCoupleId(savedCouple.getId());
+                long total = users.stream().mapToLong(u -> u.getScore() != null ? u.getScore() : 0L).sum();
+                savedCouple.setTotalScores(total);
+                coupleRepository.save(savedCouple);
+
+                // 기존 토큰들 만료 처리
+                userTokenRepository.deleteAllByUserId(user.getId());
+
+                // 새로운 JWT 토큰 생성 (coupleId 포함)
+                String newToken = jwtTokenProvider.generateToken(user.getId(), user.getCoupleId());
+                String refreshToken = "refresh_token_" + user.getId() + "_" + System.currentTimeMillis();
+                log.info("사용자 A 새로운 토큰 생성: userId={}, coupleId={}", user.getId(), user.getCoupleId());
+
+                // 토큰을 데이터베이스에 저장
+                UserToken userToken = UserToken.builder()
+                                .userId(user.getId())
+                                .accessToken(newToken)
+                                .refreshToken(refreshToken)
+                                .expiredAt(LocalDateTime.now().plusDays(7)) // 7일 후 만료
+                                .build();
+                userTokenRepository.save(userToken);
+                log.info("사용자 A 토큰 저장 완료: {}", user.getId());
+
                 // 매칭 코드 생성 (6자리 숫자)
                 String matchCode = String.format("%06d", (int) (Math.random() * 1000000));
 
-                // Redis에 매칭 정보 저장 (characterId 제거)
+                // Redis에 매칭 정보 저장 (coupleId 포함)
                 String redisKey = MATCH_CODE_PREFIX + matchCode;
                 String matchData = userId.toString() + ":" + request.getName() + ":"
-                                + (request.getStartDate() != null ? request.getStartDate().toString() : "");
+                                + (request.getStartDate() != null ? request.getStartDate().toString() : "") + ":"
+                                + savedCouple.getId().toString();
                 redisTemplate.opsForValue().set(redisKey, matchData, MATCH_CODE_EXPIRE_SECONDS,
                                 java.util.concurrent.TimeUnit.SECONDS);
 
-                log.info("매칭 코드 생성 완료: {}", matchCode);
-                return matchCode;
+                // 응답 데이터 생성
+                Map<String, String> response = new HashMap<>();
+                response.put("matchCode", matchCode);
+                response.put("newToken", newToken);
+                response.put("coupleId", savedCouple.getId().toString());
+
+                log.info("매칭 코드 생성 완료: {} - 커플 ID: {} - 새로운 토큰 생성 및 저장", matchCode, savedCouple.getId());
+                return response;
         }
 
-        public void acceptMatchCode(UUID userId, CoupleMatchAcceptRequest request) {
+        public Map<String, String> acceptMatchCode(UUID userId, CoupleMatchAcceptRequest request) {
                 log.info("커플 매칭 수락 요청: {}", userId);
 
                 // 사용자 확인
@@ -88,8 +144,15 @@ public class CoupleService {
                 UUID requesterId = UUID.fromString(parts[0]);
                 String coupleName = parts[1];
                 java.time.LocalDate startDate = null;
+
                 if (parts.length > 2 && !parts[2].isEmpty()) {
                         startDate = java.time.LocalDate.parse(parts[2]);
+                }
+
+                // 커플 ID 추출
+                UUID existingCoupleId = null;
+                if (parts.length > 3 && !parts[3].isEmpty()) {
+                        existingCoupleId = UUID.fromString(parts[3]);
                 }
 
                 // 자기 자신과 매칭 시도 방지
@@ -97,40 +160,49 @@ public class CoupleService {
                         throw new RuntimeException("자기 자신과는 매칭할 수 없습니다.");
                 }
 
-                // 커플 생성 (characterId는 엔티티 기본값 사용)
-                Couple.CoupleBuilder coupleBuilder = Couple.builder()
-                                .name(coupleName)
-                                .expired("N");
-                if (startDate != null) {
-                        coupleBuilder.startDate(startDate.atStartOfDay());
-                        coupleBuilder.year(startDate.getYear());
-                        coupleBuilder.month(startDate.getMonthValue());
-                        coupleBuilder.date(startDate.getDayOfMonth());
-                } else {
-                        coupleBuilder.startDate(java.time.LocalDateTime.now());
-                }
-                Couple savedCouple = coupleRepository.save(coupleBuilder.build());
+                // 기존 커플에 사용자 B 추가
+                final UUID coupleId = existingCoupleId;
+                Couple existingCouple = coupleRepository.findById(coupleId)
+                                .orElseThrow(() -> new RuntimeException("커플을 찾을 수 없습니다: " + coupleId));
 
-                // 두 사용자의 coupleId 업데이트
-                User requester = userRepository.findById(requesterId)
-                                .orElseThrow(() -> new RuntimeException("매칭 요청자를 찾을 수 없습니다."));
-
-                requester.setCoupleId(savedCouple.getId());
-                user.setCoupleId(savedCouple.getId());
-
-                userRepository.save(requester);
+                // 사용자 B를 기존 커플에 추가
+                user.setCoupleId(existingCouple.getId());
                 userRepository.save(user);
 
                 // totalScores 갱신
-                var users = userRepository.findByCoupleId(savedCouple.getId());
+                var users = userRepository.findByCoupleId(existingCouple.getId());
                 long total = users.stream().mapToLong(u -> u.getScore() != null ? u.getScore() : 0L).sum();
-                savedCouple.setTotalScores(total);
-                coupleRepository.save(savedCouple);
+                existingCouple.setTotalScores(total);
+                coupleRepository.save(existingCouple);
+
+                // 새로운 JWT 토큰 생성 (coupleId 포함)
+                String newToken = jwtTokenProvider.generateToken(user.getId(), user.getCoupleId());
+                String refreshToken = "refresh_token_" + user.getId() + "_" + System.currentTimeMillis();
+                log.info("사용자 B 새로운 토큰 생성: userId={}, coupleId={}", user.getId(), user.getCoupleId());
+
+                // 기존 토큰들 만료 처리
+                userTokenRepository.deleteAllByUserId(user.getId());
+
+                // 토큰을 데이터베이스에 저장
+                UserToken userToken = UserToken.builder()
+                                .userId(user.getId())
+                                .accessToken(newToken)
+                                .refreshToken(refreshToken)
+                                .expiredAt(LocalDateTime.now().plusDays(7)) // 7일 후 만료
+                                .build();
+                userTokenRepository.save(userToken);
+                log.info("사용자 B 토큰 저장 완료: {}", user.getId());
 
                 // Redis에서 매칭 정보 삭제
                 redisTemplate.delete(redisKey);
 
-                log.info("커플 매칭 완료: {}", savedCouple.getId());
+                // 응답 데이터 생성
+                Map<String, String> response = new HashMap<>();
+                response.put("newToken", newToken);
+                response.put("coupleId", existingCouple.getId().toString());
+
+                log.info("커플 매칭 완료: {} - 사용자 B 추가됨 - 새로운 토큰 생성", existingCouple.getId());
+                return response;
         }
 
         public void breakCouple(UUID userId) {

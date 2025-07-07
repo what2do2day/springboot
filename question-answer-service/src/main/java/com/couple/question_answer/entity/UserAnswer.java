@@ -26,19 +26,15 @@ public class UserAnswer {
     private UUID userId;
 
     @Column(name = "question_id", nullable = false)
-    private UUID questionId;
+    private String questionId; // MongoDB ObjectId를 문자열로 저장
 
-    @Column(name = "couple_id", nullable = false)
+    @Column(name = "couple_id", nullable = true)
     private UUID coupleId;
 
-    @Column(name = "selected_option", nullable = false, length = 1)
-    private String selectedOption; // '1' or '2'
+    @Column(name = "selected_choice", nullable = false, length = 1)
+    private String selectedChoice; // 'A' 또는 'B'
 
     @Column(name = "created_at", nullable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "question_id", insertable = false, updatable = false)
-    private Question question;
 }

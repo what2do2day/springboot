@@ -31,11 +31,11 @@ public class UserVector {
     @Field("updatedAt")
     private LocalDateTime updatedAt;
 
-    // 벡터 초기화 메서드
+    // 벡터 초기화 메서드 (vec_1 ~ vec_50 형식)
     public static UserVector createInitialVector(UUID userId) {
         Map<String, Double> initialVectors = new java.util.HashMap<>();
         for (int i = 1; i <= 50; i++) {
-            initialVectors.put("vec" + i, 0.0);
+            initialVectors.put("vec_" + i, 0.0);
         }
 
         return UserVector.builder()
@@ -59,13 +59,13 @@ public class UserVector {
         return value != null && value >= -1.0 && value <= 1.0;
     }
 
-    // 벡터 키 검증 (vec1 ~ vec50)
+    // 벡터 키 검증 (vec_1 ~ vec_50)
     public boolean isValidVectorKey(String key) {
-        if (key == null || !key.startsWith("vec")) {
+        if (key == null || !key.startsWith("vec_")) {
             return false;
         }
         try {
-            int num = Integer.parseInt(key.substring(3));
+            int num = Integer.parseInt(key.substring(4)); // "vec_" 제거 후 숫자 추출
             return num >= 1 && num <= 50;
         } catch (NumberFormatException e) {
             return false;

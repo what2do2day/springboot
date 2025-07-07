@@ -19,7 +19,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/user-answers")
 @RequiredArgsConstructor
-
 public class UserAnswerController {
 
     private final UserAnswerService userAnswerService;
@@ -29,10 +28,12 @@ public class UserAnswerController {
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId,
             @Valid @RequestBody UserAnswerRequest request) {
-        log.info("답변 제출 요청 - userId: {}, coupleId: {}, questionId: {}", userId, coupleId, request.getQuestionId());
+        log.info("답변 제출 요청 - userId: {}, coupleId: {}, questionId: {}, selectedChoice: {}",
+                userId, coupleId, request.getQuestionId(), request.getSelectedChoice());
 
+        UUID userIdUUID = UUID.fromString(userId);
         UUID coupleIdUUID = coupleId != null && !"null".equals(coupleId) ? UUID.fromString(coupleId) : null;
-        UserAnswerResponse response = userAnswerService.submitAnswer(UUID.fromString(userId), coupleIdUUID, request);
+        UserAnswerResponse response = userAnswerService.submitAnswer(userIdUUID, coupleIdUUID, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("답변이 제출되었습니다.", response));
     }
@@ -43,7 +44,8 @@ public class UserAnswerController {
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
         log.info("내 답변 조회 - userId: {}, coupleId: {}", userId, coupleId);
 
-        List<UserAnswerResponse> answers = userAnswerService.getUserAnswers(UUID.fromString(userId));
+        UUID userIdUUID = UUID.fromString(userId);
+        List<UserAnswerResponse> answers = userAnswerService.getUserAnswers(userIdUUID);
         return ResponseEntity.ok(ApiResponse.success("답변 목록 조회 성공", answers));
     }
 }

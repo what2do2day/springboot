@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: schedule-meeting
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: schedule-meeting
+  template:
+    metadata:
+      labels:
+        app: schedule-meeting
+    spec:
+      containers:
+        - name: schedule-meeting
+          image: hyundae.kr.ncr.ntruss.com/schedule-meeting:latest
+          ports:
+            - containerPort: 8082 
