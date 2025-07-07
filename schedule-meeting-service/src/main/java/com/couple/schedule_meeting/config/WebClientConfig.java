@@ -10,6 +10,7 @@ public class WebClientConfig {
     @Bean
     public WebClient webClient() {
         return WebClient.builder()
+                .baseUrl("https://dapi.kakao.com")
                 .build();
     }
 } 

@@ -17,6 +17,7 @@ public class PlaceResponse {
     private String name;
     private String address;
     private BigDecimal rating;
+    private String code;
     private String category;
 
     public static PlaceResponse from(Place place) {
@@ -25,6 +26,7 @@ public class PlaceResponse {
                 .name(place.getName())
                 .address(place.getAddress())
                 .rating(place.getRating())
+                .code(place.getCode())
                 .category(place.getCategory())
                 .build();
     }

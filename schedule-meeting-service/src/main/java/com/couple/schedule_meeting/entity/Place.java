@@ -26,7 +26,10 @@ public class Place {
     @Column(name = "rating", precision = 2, scale = 1)
     private BigDecimal rating;
 
-    @Column(name = "category", length = 100, nullable = false)
+    @Column(name = "code", length = 50, nullable = false)
+    private String code;
+
+    @Column(name = "category", length = 50, nullable = false)
     private String category;
 
     @Column(name = "lat", precision = 15, scale = 13)

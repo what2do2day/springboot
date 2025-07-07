@@ -35,3 +35,8 @@ logging:
   level:
     com.couple.schedule_meeting: DEBUG
     org.springframework.security: DEBUG
+
+# Kakao API 설정
+kakao:
+  api:
+    key: ${KAKAO_API_KEY:your-kakao-api-key-here}
