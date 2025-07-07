@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "chat_messages")
+@Table(name = "couple_chat_messages")
 @Data
 @Builder
 @NoArgsConstructor

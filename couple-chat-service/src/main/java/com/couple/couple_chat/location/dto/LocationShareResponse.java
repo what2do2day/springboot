@@ -20,8 +20,6 @@ public class LocationShareResponse {
     private String senderName;
     private Double latitude;
     private Double longitude;
-    private Double accuracy;
-    private String address;
     private LocalDateTime timestamp;
     private String messageType;
     private LocalDateTime createdAt;
