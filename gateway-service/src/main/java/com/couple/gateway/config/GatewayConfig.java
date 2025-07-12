@@ -44,7 +44,7 @@ public class GatewayConfig {
                                                                                 new JwtAuthenticationFilter.Config())))
                                                 .uri("http://schedule-meeting-service:8082"))
                                 .route("question-answer-service", r -> r
-                                                .path("/api/questions/**", "/api/tags/**", "/api/user-answers/**",
+                                                .path("/api/questions/**", "/api/tags/**", "/api/user-answers/**", "/api/user-vectors",
                                                                 "/api/user-tag-profiles/**")
                                                 .filters(f -> f
                                                                 .rewritePath("/api/(?<segment>.*)", "/api/${segment}")
@@ -62,25 +62,35 @@ public class GatewayConfig {
                                                                 .filter(jwtFilter.apply(
                                                                                 new JwtAuthenticationFilter.Config())))
                                                 .uri("http://couple-chat-service:8084"))
-                                .route("couple-chat-websocket", r -> r
-                                                .path("/ws/couple-chat/**")
-                                                .filters(f -> f
-                                                                .rewritePath("/ws/(?<segment>.*)", "/ws/${segment}")
-                                                                .filter(webSocketAuthFilter.apply(
-                                                                                new WebSocketAuthFilter.Config())))
-                                                .uri("ws://couple-chat-service:8084"))
-                                .route("couple-chat-static", r -> r
-                                                .path("/", "/index.html", "/js/**", "/css/**")
-                                                .uri("http://couple-chat-service:8084"))
-                                .route("livechat-django", r -> r
-                                                .path("/api/chat/**", "/api/push/**")
+                                .route("couple-chat-location", r -> r
+                                                .path("/api/location/**")
                                                 .filters(f -> f
                                                                 .rewritePath("/api/(?<segment>.*)", "/api/${segment}")
                                                                 .addRequestHeader("X-Response-Time",
                                                                                 System.currentTimeMillis() + "")
                                                                 .filter(jwtFilter.apply(
                                                                                 new JwtAuthenticationFilter.Config())))
-                                                .uri("http://livechat-django:8000"))
+                                                .uri("http://couple-chat-service:8084"))
+                                .route("couple-chat-websocket-api", r -> r
+                                                .path("/api/websocket/**")
+                                                .filters(f -> f
+                                                                .rewritePath("/api/(?<segment>.*)", "/api/${segment}")
+                                                                .addRequestHeader("X-Response-Time",
+                                                                                System.currentTimeMillis() + "")
+                                                                .filter(jwtFilter.apply(
+                                                                                new JwtAuthenticationFilter.Config())))
+                                                .uri("http://couple-chat-service:8084"))
+                                .route("couple-chat-websocket", r -> r
+                                                .path("/ws/connect/**")
+                                                .filters(f -> f
+                                                                .rewritePath("/ws/connect/(?<segment>.*)", "/ws/connect")
+                                                                .filter(webSocketAuthFilter.apply(
+                                                                                new WebSocketAuthFilter.Config())))
+                                                .uri("ws://couple-chat-service:8084"))
+
+                                .route("couple-chat-static", r -> r
+                                                .path("/", "/index.html", "/js/**", "/css/**")
+                                                .uri("http://couple-chat-service:8084"))
                                 .route("mission-store-service", r -> r
                                                 .path("/api/missions/**", "/api/shop/**")
                                                 .filters(f -> f
@@ -90,17 +100,6 @@ public class GatewayConfig {
                                                                 .filter(jwtFilter.apply(
                                                                                 new JwtAuthenticationFilter.Config())))
                                                 .uri("http://mission-store-service:8088"))
-                                .route("django-websocket", r -> r
-                                                .path("/ws/**")
-                                                .filters(f -> f
-                                                                .rewritePath("/ws/(?<segment>.*)", "/ws/${segment}")
-                                                                .filter(webSocketAuthFilter.apply(
-                                                                                new WebSocketAuthFilter.Config())))
-                                                .uri("ws://livechat-django:8000"))
-                                .route("django-static", r -> r
-                                                .path("/chat_test.html", "/chat_gateway_test.html", "/chat_jwt_test.html", 
-                                                                "/room_chat.html", "/static/**")
-                                                .uri("http://livechat-django:8000"))
                                 .build();
         }
 

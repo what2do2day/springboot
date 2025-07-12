@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class WaypointRouteService {
 
-    private final SkTransitDetailedService skTransitDetailedService;
+    private final TransitDetailedService transitDetailedService;
 
     /**
      * 경유지를 포함한 상세 경로를 조회합니다.
@@ -53,10 +53,16 @@ public class WaypointRouteService {
                 WaypointRouteRequest.LocationCoordinate from = waypoints.get(i);
                 WaypointRouteRequest.LocationCoordinate to = waypoints.get(i + 1);
                 
+                // null 좌표 체크
+                if (from.getLon() == null || from.getLat() == null || to.getLon() == null || to.getLat() == null) {
+                    log.warn("구간 {} 좌표가 null입니다: {} -> {}", i + 1, from.getName(), to.getName());
+                    continue; // 이 구간은 건너뛰고 다음 구간으로
+                }
+                
                 log.info("구간 {} 상세 경로 조회: {} -> {}", i + 1, from.getName(), to.getName());
                 
                 // 상세 경로 조회
-                SkTransitDetailedResponseDto detailedRouteResponse = skTransitDetailedService.getDetailedTransitRoute(
+                SkTransitDetailedResponseDto detailedRouteResponse = transitDetailedService.getDetailedTransitRoute(
                     from.getLon(), from.getLat(), to.getLon(), to.getLat()
                 );
                 

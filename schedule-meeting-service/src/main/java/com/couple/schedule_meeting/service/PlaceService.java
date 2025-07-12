@@ -75,8 +75,8 @@ public class PlaceService {
         long regionCount = allPlaces.stream().filter(p -> p.getAddress().contains(region)).count();
         log.info("주소에 '{}'가 포함된 장소 수: {}", region, regionCount);
         
-        // 해당 행정구역과 code로 장소 조회
-        List<Place> places = placeRepository.findByCodeAndAddressContainingOrderByRatingDesc(code, region);
+        // 해당 행정구역과 code로 장소 조회 (ID 순서로 정렬)
+        List<Place> places = placeRepository.findByCodeAndAddressContainingOrderByIdAsc(code, region);
         
         // 상위 5개만 선택
         if (places.size() > 5) {

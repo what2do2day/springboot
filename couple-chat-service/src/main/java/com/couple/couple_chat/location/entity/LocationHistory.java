@@ -37,12 +37,6 @@ public class LocationHistory {
     @Column(name = "longitude", nullable = false)
     private Double longitude;
 
-    @Column(name = "accuracy")
-    private Double accuracy;
-
-    @Column(name = "address", length = 500)
-    private String address;
-
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

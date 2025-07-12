@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY build/libs/*.jar app.jar
 COPY certs/global-bundle.pem /app/ssl/global-bundle.pem
+COPY src/main/resources/beepbeep-99285-firebase-adminsdk-fbsvc-5195c2a4ec.json /app/firebase-adminsdk.json
 
 RUN keytool -importcert \
     -alias docdb \

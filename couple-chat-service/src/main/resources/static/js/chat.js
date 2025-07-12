@@ -1,5 +1,5 @@
 // 전역 변수
-let stompClient = null;
+let ws = null;
 let currentUser = null;
 let currentRoom = null;
 let messageCount = 0;
@@ -131,8 +131,17 @@ function shareCurrentLocation() {
                 };
                 
                 // WebSocket으로 전송
-                if (stompClient && stompClient.connected) {
-                    stompClient.send("/app/share-location", {}, JSON.stringify(locationRequest));
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    const locationMessage = {
+                        type: 'location.share',
+                        latitude: locationRequest.latitude,
+                        longitude: locationRequest.longitude,
+                        accuracy: locationRequest.accuracy,
+                        address: locationRequest.address,
+                        roomId: locationRequest.roomId,
+                        timestamp: new Date().toISOString()
+                    };
+                    ws.send(JSON.stringify(locationMessage));
                 }
                 
                 // REST API로도 전송
@@ -176,51 +185,74 @@ function connectWebSocket() {
     updateUserInfo();
     
     const serverUrl = document.getElementById('serverUrl').value;
-    const socket = new SockJS(`${serverUrl}/ws/couple-chat`);
-    stompClient = Stomp.over(socket);
+    const wsUrl = serverUrl.replace('http', 'ws') + '/ws/couple-chat';
     
-    stompClient.connect({}, function (frame) {
-        console.log('Connected: ' + frame);
-        updateStatus(true);
-        addSystemMessage('WebSocket 연결되었습니다! 💕');
+    try {
+        ws = new WebSocket(wsUrl);
         
-        // 채팅방 구독
-        stompClient.subscribe(`/topic/chat/${currentRoom}`, function (message) {
-            const chatMessage = JSON.parse(message.body);
-            const isSent = chatMessage.senderId === currentUser.id;
-            
-            // 위치 공유 메시지 처리
-            if (chatMessage.messageType === 'LOCATION') {
-                addLocationMessage(chatMessage, isSent);
-            } else {
-                addMessage(chatMessage.message, isSent, chatMessage.id);
+        ws.onopen = function(event) {
+            console.log('WebSocket 연결 성공');
+            updateStatus(true);
+            addSystemMessage('WebSocket 연결되었습니다! 💕');
+        };
+        
+        ws.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                console.log('메시지 수신:', data);
+                
+                switch(data.type) {
+                    case 'connection.established':
+                        addSystemMessage('연결이 성공적으로 설정되었습니다.');
+                        break;
+                    case 'chat.message.received':
+                        addMessage(data.content, false, data.messageId);
+                        break;
+                    case 'location.share.received':
+                        const locationMessage = {
+                            latitude: data.latitude,
+                            longitude: data.longitude,
+                            timestamp: data.timestamp
+                        };
+                        addLocationMessage(locationMessage, false);
+                        break;
+                    case 'pong':
+                        console.log('Ping-Pong 응답 수신');
+                        break;
+                    case 'error':
+                        addSystemMessage(`오류: ${data.message}`);
+                        break;
+                    default:
+                        addSystemMessage(`알 수 없는 메시지: ${data.type}`);
+                }
+            } catch (error) {
+                console.error('메시지 파싱 오류:', error);
+                addSystemMessage(`메시지 파싱 오류: ${event.data}`);
             }
-        });
+        };
         
-        // 위치 공유 토픽 구독
-        stompClient.subscribe(`/topic/location/${currentRoom}`, function (message) {
-            const locationMessage = JSON.parse(message.body);
-            const isSent = locationMessage.senderId === currentUser.id;
-            addLocationMessage(locationMessage, isSent);
-        });
+        ws.onclose = function(event) {
+            console.log('WebSocket 연결 종료:', event.code, event.reason);
+            updateStatus(false);
+            addSystemMessage('연결이 종료되었습니다.');
+        };
         
-        // 개인 메시지 구독
-        stompClient.subscribe(`/user/queue/messages`, function (message) {
-            const chatMessage = JSON.parse(message.body);
-            addMessage(chatMessage.message, false, chatMessage.id);
-        });
+        ws.onerror = function(error) {
+            console.error('WebSocket 오류:', error);
+            updateStatus(false);
+            addSystemMessage('연결 오류가 발생했습니다.');
+        };
         
-    }, function (error) {
-        console.log('STOMP error: ' + error);
-        updateStatus(false);
-        addSystemMessage('연결에 실패했습니다. 다시 시도해주세요.');
-    });
+    } catch (error) {
+        console.error('WebSocket 연결 실패:', error);
+        addSystemMessage('연결에 실패했습니다.');
+    }
 }
 
 // WebSocket 연결 해제
 function disconnectWebSocket() {
-    if (stompClient !== null) {
-        stompClient.disconnect();
+    if (ws) {
+        ws.close(1000, '사용자가 연결을 종료했습니다');
         updateStatus(false);
         addSystemMessage('연결이 해제되었습니다.');
     }
@@ -229,20 +261,27 @@ function disconnectWebSocket() {
 // 메시지 전송
 function sendMessage() {
     const message = messageInput.value.trim();
-    if (message && stompClient && stompClient.connected) {
+    if (message && ws && ws.readyState === WebSocket.OPEN) {
         const chatMessage = {
+            type: 'chat.message',
+            messageId: generateUUID(),
+            content: message,
             roomId: currentRoom,
-            message: message,
-            messageType: 'TEXT'
+            timestamp: new Date().toISOString()
         };
         
         // WebSocket으로 전송
-        stompClient.send("/app/send-message", {}, JSON.stringify(chatMessage));
+        ws.send(JSON.stringify(chatMessage));
+        
+        // UI에 즉시 표시
+        addMessage(message, true, chatMessage.messageId);
         
         // REST API로도 전송 (백업)
         sendMessageViaRest(chatMessage);
         
         messageInput.value = '';
+    } else if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert('연결되지 않았습니다.');
     }
 }
 

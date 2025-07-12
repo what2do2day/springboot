@@ -9,6 +9,7 @@ import com.couple.user_couple.dto.HomeInfoResponse;
 import com.couple.user_couple.dto.CoupleMemberResponse;
 import com.couple.user_couple.dto.UserResponse;
 import com.couple.user_couple.dto.CoupleInfoResponse;
+import com.couple.user_couple.dto.CoupleRankResponse;
 import com.couple.user_couple.service.CoupleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -129,5 +130,13 @@ public class CoupleController {
         response.put("message", dday + "일째");
         
         return ResponseEntity.ok(ApiResponse.success("디데이 조회 성공", response));
+    }
+
+    @GetMapping("/rank")
+    @Operation(summary = "커플 랭킹 조회", description = "전체 커플의 점수 기준 랭킹을 조회합니다.")
+    public ResponseEntity<ApiResponse<List<CoupleRankResponse>>> getCoupleRanks() {
+        log.info("커플 랭킹 조회 API 호출");
+        List<CoupleRankResponse> ranks = coupleService.getCoupleRanks();
+        return ResponseEntity.ok(ApiResponse.success("커플 랭킹 조회 성공", ranks));
     }
 }

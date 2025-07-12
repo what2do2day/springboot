@@ -15,9 +15,6 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ChatMessageRequest {
 
-    @NotNull(message = "방 ID는 필수입니다")
-    private UUID roomId;
-
     @NotBlank(message = "메시지는 필수입니다")
     private String message;
 

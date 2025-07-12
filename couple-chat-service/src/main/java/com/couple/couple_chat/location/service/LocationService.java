@@ -11,9 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.couple.couple_chat.controller.WebSocketController;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,7 +29,6 @@ public class LocationService {
 
     private final UserLocationRepository userLocationRepository;
     private final LocationHistoryRepository locationHistoryRepository;
-    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * 위치 공유
@@ -44,9 +43,10 @@ public class LocationService {
         // 위치 히스토리 저장
         LocationHistory locationHistory = saveLocationHistory(senderId, request);
 
-        // WebSocket으로 실시간 전송
+        // WebSocket으로 실시간 전송 (표준 WebSocket 방식)
         LocationShareResponse response = convertToResponse(locationHistory);
-        messagingTemplate.convertAndSend("/topic/location/" + request.getRoomId(), response);
+        // TODO: 표준 WebSocket을 통한 메시지 전송 구현
+        // 현재는 REST API 응답만 반환
 
         log.info("위치 공유 완료: userId={}, locationId={}", senderId, locationHistory.getId());
         return response;
@@ -64,8 +64,6 @@ public class LocationService {
             userLocation = existingLocation.get();
             userLocation.setLatitude(request.getLatitude());
             userLocation.setLongitude(request.getLongitude());
-            userLocation.setAccuracy(request.getAccuracy());
-            userLocation.setAddress(request.getAddress());
             userLocation.setUpdatedAt(LocalDateTime.now());
         } else {
             // 새 위치 생성
@@ -74,8 +72,6 @@ public class LocationService {
                     .coupleId(request.getRoomId()) // roomId를 coupleId로 사용
                     .latitude(request.getLatitude())
                     .longitude(request.getLongitude())
-                    .accuracy(request.getAccuracy())
-                    .address(request.getAddress())
                     .isActive(true)
                     .build();
         }
@@ -93,8 +89,6 @@ public class LocationService {
                 .roomId(request.getRoomId())
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
-                .accuracy(request.getAccuracy())
-                .address(request.getAddress())
                 .build();
 
         return locationHistoryRepository.save(locationHistory);
@@ -160,8 +154,6 @@ public class LocationService {
                 .senderName("사용자") // 실제로는 사용자 정보를 조회해야 함
                 .latitude(locationHistory.getLatitude())
                 .longitude(locationHistory.getLongitude())
-                .accuracy(locationHistory.getAccuracy())
-                .address(locationHistory.getAddress())
                 .timestamp(locationHistory.getCreatedAt())
                 .messageType("LOCATION")
                 .createdAt(locationHistory.getCreatedAt())
@@ -179,8 +171,6 @@ public class LocationService {
                 .senderName("사용자") // 실제로는 사용자 정보를 조회해야 함
                 .latitude(userLocation.getLatitude())
                 .longitude(userLocation.getLongitude())
-                .accuracy(userLocation.getAccuracy())
-                .address(userLocation.getAddress())
                 .timestamp(userLocation.getUpdatedAt())
                 .messageType("LOCATION")
                 .createdAt(userLocation.getCreatedAt())

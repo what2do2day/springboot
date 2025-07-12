@@ -35,12 +35,6 @@ public class UserLocation {
     @Column(name = "longitude", nullable = false)
     private Double longitude;
 
-    @Column(name = "accuracy")
-    private Double accuracy; // 위치 정확도 (미터)
-
-    @Column(name = "address", length = 500)
-    private String address; // 주소 정보
-
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;

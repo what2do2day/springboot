@@ -31,7 +31,7 @@ public class UserController {
     @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
     public ResponseEntity<ApiResponse<UserResponse>> signup(
             @Valid @RequestBody UserSignupRequest request) {
-        log.info("회원가입 요청: {}", request.getName());
+        log.info("회원가입 요청: {}", request.getEmail());
 
         UserResponse response = userService.signup(request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -74,5 +74,19 @@ public class UserController {
 
         userService.deleteUser(UUID.fromString(userId));
         return ResponseEntity.ok(ApiResponse.success("회원 탈퇴가 완료되었습니다.", null));
+    }
+
+
+
+    @PutMapping("/update")
+    @Operation(summary = "사용자 정보 수정", description = "사용자 정보를 수정합니다.")
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+            @Parameter(description = "사용자 ID", example = "123e4567-e89b-12d3-a456-426614174000") 
+            @RequestHeader("X-User-ID") String userId,
+            @Valid @RequestBody UserUpdateRequest request) {
+        
+        log.info("사용자 정보 수정 요청: userId={}", userId);
+        UserResponse response = userService.updateUser(UUID.fromString(userId), request);
+        return ResponseEntity.ok(ApiResponse.success("사용자 정보가 수정되었습니다.", response));
     }
 }

@@ -24,10 +24,6 @@ public class LocationShareRequest {
     @NotNull(message = "경도는 필수입니다")
     private Double longitude;
 
-    private Double accuracy; // 위치 정확도 (미터)
-
-    private String address; // 주소 정보
-
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
 

@@ -1,7 +1,7 @@
 package com.couple.question_answer.controller;
 
 import com.couple.common.dto.ApiResponse;
-import com.couple.question_answer.dto.CoupleVectorsResponse;
+import com.couple.question_answer.dto.CoupleResponse;
 import com.couple.question_answer.dto.UserVectorRequest;
 import com.couple.question_answer.dto.UserVectorResponse;
 import com.couple.question_answer.service.UserVectorService;
@@ -83,6 +83,7 @@ public class UserVectorController {
     }
 
     // 내부 서버 간 통신용 API - 헤더 인증 없이 userId로 조회
+    // 본인 벡터만 조회 가능
     @GetMapping("/internal/{userId}")
     public ResponseEntity<ApiResponse<UserVectorResponse>> getUserVectorByUserId(
             @PathVariable String userId) {
@@ -103,13 +104,13 @@ public class UserVectorController {
     }
 
     @GetMapping("/couple-vectors")
-    public ResponseEntity<ApiResponse<CoupleVectorsResponse>> getCoupleVectors(
+    public ResponseEntity<ApiResponse<CoupleResponse>> getCoupleVectors(
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader(value = "X-Couple-ID", required = false) String coupleId) {
         log.info("커플 벡터 조회 요청 - userId: {}, coupleId: {}", userId, coupleId);
 
         UUID userIdUUID = UUID.fromString(userId);
-        CoupleVectorsResponse response = userVectorService.getCoupleVectors(userIdUUID);
+        CoupleResponse response = userVectorService.getCoupleVectors(userIdUUID);
         return ResponseEntity.ok(ApiResponse.success("커플 벡터 조회 성공", response));
     }
 }

@@ -106,8 +106,9 @@ public class MeetingRecommendationService {
                 log.info("출발지 추가: ({}, {})", request.getCurrentLat(), request.getCurrentLon());
             }
             
-            // 추천된 장소들 추가
+            // 추천된 장소들 추가 (null 좌표 제외)
             waypoints.addAll(coordinates.stream()
+                    .filter(coord -> coord.getLongitude() != null && coord.getLatitude() != null)
                     .map(coord -> WaypointRouteRequest.LocationCoordinate.builder()
                             .name(coord.getStoreName())
                             .lon(coord.getLongitude().toString())
@@ -162,12 +163,12 @@ public class MeetingRecommendationService {
     }
     
     /**
-     * RecommendationResponse에서 1순위 스토어들의 이름을 추출
+     * RecommendationResponse에서 LLM이 선택한 장소들의 이름을 추출
      */
     private List<String> extractTopStores(RecommendationResponse recommendationResponse) {
         return recommendationResponse.getTimeSlots().stream()
-                .flatMap(timeSlot -> timeSlot.getTopCandidates().stream())
-                .map(candidate -> candidate.getStoreName())
+                .filter(timeSlot -> timeSlot.getLlmRecommendation() != null && timeSlot.getLlmRecommendation().getSelected() != null)
+                .map(timeSlot -> timeSlot.getLlmRecommendation().getSelected())
                 .distinct()
                 .collect(Collectors.toList());
     }

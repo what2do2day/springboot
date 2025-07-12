@@ -8,6 +8,7 @@ import com.couple.user_couple.dto.HomeInfoResponse;
 import com.couple.user_couple.dto.CoupleMemberResponse;
 import com.couple.user_couple.dto.UserResponse;
 import com.couple.user_couple.dto.CoupleInfoResponse;
+import com.couple.user_couple.dto.CoupleRankResponse;
 import com.couple.user_couple.entity.Couple;
 import com.couple.user_couple.entity.User;
 import com.couple.user_couple.repository.CoupleRepository;
@@ -17,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -36,6 +38,7 @@ public class CoupleService {
         private final CoupleRepository coupleRepository;
         private final UserRepository userRepository;
         private final StringRedisTemplate redisTemplate;
+        private final WebClient webClient;
 
         private static final String MATCH_CODE_PREFIX = "couple:match:";
         private static final int MATCH_CODE_EXPIRE_SECONDS = 300; // 5분
@@ -135,6 +138,15 @@ public class CoupleService {
 
                 // Redis에서 매칭 정보 삭제
                 redisTemplate.delete(redisKey);
+
+                // 채팅방 자동 생성
+                try {
+                    createChatRoom(savedCouple.getId(), requesterId, userId);
+                    log.info("채팅방 생성 완료: coupleId={}", savedCouple.getId());
+                } catch (Exception e) {
+                    log.error("채팅방 생성 실패: coupleId={}, error={}", savedCouple.getId(), e.getMessage());
+                    // 채팅방 생성 실패해도 커플 매칭은 성공으로 처리
+                }
 
                 // 응답 데이터 생성
                 Map<String, String> response = new HashMap<>();
@@ -296,6 +308,24 @@ public class CoupleService {
         }
 
         /**
+         * 채팅방 생성
+         */
+        private void createChatRoom(UUID coupleId, UUID user1Id, UUID user2Id) {
+                String url = "http://couple-chat-service:8084/api/couple-chat/rooms";
+                
+                webClient.post()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/api/couple-chat/rooms")
+                                .queryParam("coupleId", coupleId.toString())
+                                .queryParam("user1Id", user1Id.toString())
+                                .queryParam("user2Id", user2Id.toString())
+                                .build())
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .block(); // 동기 호출
+        }
+
+        /**
          * 사용자 ID로 커플 정보와 디데이를 조회합니다.
          * 추천을 요청한 사람이 항상 user1이 되도록 합니다.
          * 
@@ -410,5 +440,57 @@ public class CoupleService {
                                 coupleId, startDate, currentDate, daysSinceStart);
                 
                 return daysSinceStart;
+        }
+
+        /**
+         * 전체 커플의 점수 기준 랭킹을 조회합니다.
+         * 
+         * @return 커플 랭킹 리스트
+         */
+        public List<CoupleRankResponse> getCoupleRanks() {
+                log.info("커플 랭킹 조회 시작");
+
+                // 만료되지 않은 모든 커플 조회
+                List<Couple> couples = coupleRepository.findByExpired("N");
+                log.info("활성 커플 수: {}", couples.size());
+
+                // 커플별 랭킹 정보 생성 (매칭 완료된 커플만)
+                List<CoupleRankResponse> rankList = couples.stream()
+                                .map(couple -> {
+                                        // 커플의 사용자 조회
+                                        List<User> users = userRepository.findByCoupleId(couple.getId());
+                                        
+                                        // 사용자가 2명이 아닌 경우 null 반환 (나중에 필터링)
+                                        if (users.size() != 2) {
+                                                return null;
+                                        }
+                                        
+                                        // 커플의 총 점수 계산
+                                        long totalScore = users.stream()
+                                                        .mapToLong(user -> user.getScore() != null ? user.getScore() : 0L)
+                                                        .sum();
+
+                                        // 점수가 0 이하인 경우 null 반환 (나중에 필터링)
+                                        if (totalScore <= 0) {
+                                                return null;
+                                        }
+
+                                        return CoupleRankResponse.builder()
+                                                        .coupleName(couple.getName())
+                                                        .totalScore(totalScore)
+                                                        .rank(0) // 임시로 0 설정, 나중에 정렬 후 순위 부여
+                                                        .build();
+                                })
+                                .filter(rank -> rank != null) // null 값 제거
+                                .sorted((r1, r2) -> Long.compare(r2.getTotalScore(), r1.getTotalScore())) // 점수 내림차순 정렬
+                                .collect(java.util.stream.Collectors.toList());
+
+                // 순위 부여
+                for (int i = 0; i < rankList.size(); i++) {
+                        rankList.get(i).setRank(i + 1);
+                }
+
+                log.info("커플 랭킹 조회 완료: {}개 커플", rankList.size());
+                return rankList;
         }
 }

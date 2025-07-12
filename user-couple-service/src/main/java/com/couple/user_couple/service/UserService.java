@@ -19,6 +19,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.http.HttpHeaders;
 
 import java.util.UUID;
+import java.util.Map;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -72,13 +73,22 @@ public class UserService {
             // 벡터 생성 실패해도 회원가입은 성공으로 처리
         }
 
+        // 계정 생성 후 notification 정보 저장
+        try {
+            createNotification(savedUser.getId(), request.getFcmCode(), request.getSendTime().toString());
+            log.info("사용자 notification 생성 완료: userId={}", savedUser.getId());
+        } catch (Exception e) {
+            log.error("사용자 notification 생성 실패: userId={}, error={}", savedUser.getId(), e.getMessage());
+            // notification 생성 실패해도 회원가입은 성공으로 처리
+        }
+
         return convertToResponse(savedUser);
     }
 
     // 사용자 벡터 생성 메서드
     private void createUserVector(UUID userId) {
         try {
-            String url = "http://localhost:8086/api/user-vectors";
+            String url = "http://question-answer-service:8086/api/user-vectors";
             
             webClient.post()
                     .uri(url)
@@ -88,6 +98,30 @@ public class UserService {
                     .block();
         } catch (Exception e) {
             log.error("벡터 생성 API 호출 실패: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    // 사용자 notification 생성 메서드
+    private void createNotification(UUID userId, String fcmToken, String sendTime) {
+        try {
+            String url = "http://question-answer-service:8086/api/notifications";
+            
+            // NotificationRequest 형태로 데이터 구성
+            var requestBody = Map.of(
+                "fcmToken", fcmToken,
+                "sendTime", sendTime
+            );
+            
+            webClient.post()
+                    .uri(url)
+                    .header("X-User-ID", userId.toString())
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(Object.class)
+                    .block();
+        } catch (Exception e) {
+            log.error("notification 생성 API 호출 실패: {}", e.getMessage());
             throw e;
         }
     }
@@ -166,6 +200,10 @@ public class UserService {
 
         User updatedUser = userRepository.save(user);
         return convertToResponse(updatedUser);
+    }
+
+    public UserResponse updateUser(UUID userId, UserUpdateRequest request) {
+        return updateUserInfo(userId, request);
     }
 
     public void deleteUser(UUID userId) {

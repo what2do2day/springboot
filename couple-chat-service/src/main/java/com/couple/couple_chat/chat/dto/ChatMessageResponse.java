@@ -15,7 +15,7 @@ import java.util.UUID;
 public class ChatMessageResponse {
 
     private UUID id;
-    private UUID roomId;
+    private UUID coupleId;
     private UUID senderId;
     private String senderName;
     private String message;

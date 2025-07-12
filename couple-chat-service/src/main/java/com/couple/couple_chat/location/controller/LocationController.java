@@ -6,8 +6,6 @@ import com.couple.couple_chat.location.service.LocationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -17,21 +15,11 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/location")
+@RequestMapping("/api/location")
 @RequiredArgsConstructor
 public class LocationController {
 
     private final LocationService locationService;
-
-    /**
-     * WebSocket을 통한 위치 공유
-     */
-    @MessageMapping("/share-location")
-    public void shareLocation(@Payload LocationShareRequest request) {
-        // 실제로는 인증된 사용자 ID를 가져와야 함
-        UUID senderId = UUID.randomUUID(); // 임시
-        locationService.shareLocation(senderId, request);
-    }
 
     /**
      * REST API를 통한 위치 공유

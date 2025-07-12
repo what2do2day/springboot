@@ -2,7 +2,7 @@ package com.couple.question_answer.service;
 
 import com.couple.common.dto.ApiResponse;
 import com.couple.question_answer.dto.CoupleInfoResponse;
-import com.couple.question_answer.dto.CoupleVectorsResponse;
+import com.couple.question_answer.dto.CoupleResponse;
 import com.couple.question_answer.dto.UserVectorRequest;
 import com.couple.question_answer.dto.UserVectorResponse;
 import com.couple.question_answer.entity.UserVector;
@@ -34,7 +34,7 @@ public class UserVectorService {
         log.info("사용자 벡터 생성: userId={}", userId);
 
         // 이미 존재하는지 확인
-        if (userVectorRepository.existsByUserId(userId)) {
+        if (userVectorRepository.existsByUserIdString(userId.toString())) {
             throw new IllegalArgumentException("이미 존재하는 사용자 벡터입니다: " + userId);
         }
 
@@ -49,7 +49,7 @@ public class UserVectorService {
     public UserVectorResponse getUserVector(UUID userId) {
         log.info("사용자 벡터 조회: userId={}", userId);
 
-        UserVector userVector = userVectorRepository.findByUserId(userId)
+        UserVector userVector = userVectorRepository.findByUserIdString(userId.toString())
                 .orElseThrow(() -> new IllegalArgumentException("사용자 벡터를 찾을 수 없습니다: " + userId));
 
         return convertToResponse(userVector);
@@ -58,7 +58,7 @@ public class UserVectorService {
     public UserVectorResponse updateUserVector(UUID userId, UserVectorRequest request) {
         log.info("사용자 벡터 업데이트: userId={}", userId);
 
-        UserVector userVector = userVectorRepository.findByUserId(userId)
+        UserVector userVector = userVectorRepository.findByUserIdString(userId.toString())
                 .orElseGet(() -> UserVector.createInitialVector(userId));
 
         // 벡터 값 검증 및 업데이트
@@ -89,7 +89,7 @@ public class UserVectorService {
     public UserVectorResponse updateSpecificVector(UUID userId, String vectorKey, Double value) {
         log.info("특정 벡터 업데이트: userId={}, vectorKey={}, value={}", userId, vectorKey, value);
 
-        UserVector userVector = userVectorRepository.findByUserId(userId)
+        UserVector userVector = userVectorRepository.findByUserIdString(userId.toString())
                 .orElseGet(() -> UserVector.createInitialVector(userId));
 
         // 벡터 키 검증
@@ -112,7 +112,7 @@ public class UserVectorService {
     public double getCurrentVectorValue(UUID userId, String vectorKey) {
         log.info("현재 벡터 값 조회: userId={}, vectorKey={}", userId, vectorKey);
 
-        UserVector userVector = userVectorRepository.findByUserId(userId)
+        UserVector userVector = userVectorRepository.findByUserIdString(userId.toString())
                 .orElseGet(() -> UserVector.createInitialVector(userId));
 
         Map<String, Double> vectors = userVector.getVectors();
@@ -122,14 +122,14 @@ public class UserVectorService {
     public void deleteUserVector(UUID userId) {
         log.info("사용자 벡터 삭제: userId={}", userId);
 
-        UserVector userVector = userVectorRepository.findByUserId(userId)
+        UserVector userVector = userVectorRepository.findByUserIdString(userId.toString())
                 .orElseThrow(() -> new IllegalArgumentException("사용자 벡터를 찾을 수 없습니다: " + userId));
 
         userVectorRepository.delete(userVector);
         log.info("사용자 벡터 삭제 완료: userId={}", userId);
     }
 
-    public CoupleVectorsResponse getCoupleVectors(UUID userId) {
+    public CoupleResponse getCoupleVectors(UUID userId) {
         log.info("커플 벡터 조회 시작: userId={}", userId);
 
         try {
@@ -144,7 +144,7 @@ public class UserVectorService {
 
             if (coupleResponse == null || !coupleResponse.isSuccess() || coupleResponse.getData() == null) {
                 log.error("커플 정보 조회 실패: userId={}", userId);
-                throw new RuntimeException("커플 정보를 조회할 수 없습니다.");
+                throw new RuntimeException("커플 정보를 조회할 수 없습니다." + coupleResponse.getMessage());
             }
 
             CoupleInfoResponse coupleInfo = coupleResponse.getData();
@@ -152,11 +152,11 @@ public class UserVectorService {
                     coupleInfo.getCoupleId(), coupleInfo.getUser1().getUserId(), coupleInfo.getUser2().getUserId());
 
             // 2. 각 사용자의 벡터 정보 조회
-            CoupleVectorsResponse.CoupleUserVectorResponse user1Vector = getUserVectorInfo(coupleInfo.getUser1());
-            CoupleVectorsResponse.CoupleUserVectorResponse user2Vector = getUserVectorInfo(coupleInfo.getUser2());
+            CoupleResponse.CoupleUserVectorResponse user1Vector = getUserVectorInfo(coupleInfo.getUser1());
+            CoupleResponse.CoupleUserVectorResponse user2Vector = getUserVectorInfo(coupleInfo.getUser2());
 
             // 3. 응답 생성
-            CoupleVectorsResponse response = CoupleVectorsResponse.builder()
+            CoupleResponse response = CoupleResponse.builder()
                     .coupleId(coupleInfo.getCoupleId())
                     .user1(user1Vector)
                     .user2(user2Vector)
@@ -171,15 +171,15 @@ public class UserVectorService {
         }
     }
 
-    private CoupleVectorsResponse.CoupleUserVectorResponse getUserVectorInfo(CoupleInfoResponse.UserInfo userInfo) {
+    private CoupleResponse.CoupleUserVectorResponse getUserVectorInfo(CoupleInfoResponse.UserInfo userInfo) {
         log.info("사용자 벡터 정보 조회: userId={}, name={}", userInfo.getUserId(), userInfo.getName());
 
         try {
             // 사용자 벡터 조회
-            UserVector userVector = userVectorRepository.findByUserId(userInfo.getUserId())
+            UserVector userVector = userVectorRepository.findByUserIdString(userInfo.getUserId().toString())
                     .orElseGet(() -> UserVector.createInitialVector(userInfo.getUserId()));
 
-            return CoupleVectorsResponse.CoupleUserVectorResponse.builder()
+            return CoupleResponse.CoupleUserVectorResponse.builder()
                     .userId(userInfo.getUserId())
                     .name(userInfo.getName())
                     .gender(userInfo.getGender())
@@ -190,7 +190,7 @@ public class UserVectorService {
             log.error("사용자 벡터 정보 조회 실패: userId={}, error={}", userInfo.getUserId(), e.getMessage());
             // 벡터가 없는 경우 기본 벡터로 생성
             UserVector defaultVector = UserVector.createInitialVector(userInfo.getUserId());
-            return CoupleVectorsResponse.CoupleUserVectorResponse.builder()
+            return CoupleResponse.CoupleUserVectorResponse.builder()
                     .userId(userInfo.getUserId())
                     .name(userInfo.getName())
                     .gender(userInfo.getGender())

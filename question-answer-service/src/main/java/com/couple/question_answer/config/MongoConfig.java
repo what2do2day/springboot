@@ -10,11 +10,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
+import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions.MongoConverterConfigurationAdapter;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.security.cert.X509Certificate;
+import java.util.UUID;
+import java.util.List;
 
 @Configuration
 @EnableMongoRepositories(basePackages = "com.couple.question_answer")
@@ -26,6 +31,26 @@ public class MongoConfig {
     @Bean
     public MongoMappingContext mongoMappingContext() {
         return new MongoMappingContext();
+    }
+
+    @Bean
+    public MongoCustomConversions customConversions() {
+        return new MongoCustomConversions(List.of(
+            // UUID를 문자열로 변환
+            new org.springframework.core.convert.converter.Converter<UUID, String>() {
+                @Override
+                public String convert(UUID source) {
+                    return source != null ? source.toString() : null;
+                }
+            },
+            // 문자열을 UUID로 변환
+            new org.springframework.core.convert.converter.Converter<String, UUID>() {
+                @Override
+                public UUID convert(String source) {
+                    return source != null ? UUID.fromString(source) : null;
+                }
+            }
+        ));
     }
 
     @Bean
