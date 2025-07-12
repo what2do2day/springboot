@@ -15,4 +15,8 @@ public interface PlaceRepository extends JpaRepository<Place, String> {
     
     @Query("SELECT p FROM Place p WHERE p.code = :code AND p.address LIKE %:region% ORDER BY p.rating DESC")
     List<Place> findByCodeAndAddressContainingOrderByRatingDesc(@Param("code") String code, @Param("region") String region);
+    
+    // ID 순서로 정렬 (저장 순서와 유사)
+    @Query("SELECT p FROM Place p WHERE p.code = :code AND p.address LIKE %:region% ORDER BY p.id ASC")
+    List<Place> findByCodeAndAddressContainingOrderByIdAsc(@Param("code") String code, @Param("region") String region);
 } 

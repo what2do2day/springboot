@@ -44,7 +44,7 @@ public class GatewayConfig {
                                                                                 new JwtAuthenticationFilter.Config())))
                                                 .uri("http://schedule-meeting-service:8082"))
                                 .route("question-answer-service", r -> r
-                                                .path("/api/questions/**", "/api/tags/**", "/api/user-answers/**",
+                                                .path("/api/questions/**", "/api/tags/**", "/api/user-answers/**", "/api/user-vectors",
                                                                 "/api/user-tag-profiles/**")
                                                 .filters(f -> f
                                                                 .rewritePath("/api/(?<segment>.*)", "/api/${segment}")

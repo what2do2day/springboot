@@ -23,15 +23,14 @@ public class RecommendationService {
     
     private final WebClient webClient;
     private final PlaceRepository placeRepository;
-    
-    // TODO: URL로 확인 필요
+
     private static final String RECOMMENDATION_API_URL = "http://49.50.131.82:8000/api/v1/planner/generate-plan-vector";
     
     public RecommendationResponse getRecommendations(RecommendationRequest request) {
         log.info("=== 외부 추천 API 호출 시작 ===");
         log.info("요청 URL: {}", RECOMMENDATION_API_URL);
         
-        // 요청 데이터 로깅 (취향벡터는 사이즈만)
+        // 요청 데이터 로깅
         log.info("요청 데이터:");
         log.info("  - user1: gender={}, preferences.size={}", 
                 request.getUser1().getGender(), 
@@ -45,7 +44,7 @@ public class RecommendationService {
         log.info("  - endTime: {}", request.getEndTime());
         log.info("  - keywords: {}", request.getKeywords());
         
-        // 취향벡터 샘플 로깅 (처음 5개만)
+        // 취향벡터 샘플 로깅 (첫 5개)
         log.info("  - user1 preferences 샘플: {}", 
                 request.getUser1().getPreferences().entrySet().stream()
                         .limit(5)
@@ -103,7 +102,7 @@ public class RecommendationService {
     }
     
     /**
-     * RecommendationResponse에서 각 TimeSlot의 첫 번째 StoreCandidate의 storeName으로
+     * RecommendationResponse에서 각 TimeSlot의 llm_recommendation.selected 값으로
      * Place 테이블에서 위도/경도 정보를 조회하여 리스트로 반환
      * @param response 추천 응답 데이터
      * @return 위도/경도 쌍의 리스트 (TimeSlot 순서대로)
@@ -117,34 +116,34 @@ public class RecommendationService {
         }
         
         for (RecommendationResponse.TimeSlot timeSlot : response.getTimeSlots()) {
-            if (timeSlot.getTopCandidates() != null && !timeSlot.getTopCandidates().isEmpty()) {
-                String storeName = timeSlot.getTopCandidates().get(0).getStoreName();
-                Optional<Place> place = placeRepository.findByName(storeName);
+            if (timeSlot.getLlmRecommendation() != null && timeSlot.getLlmRecommendation().getSelected() != null) {
+                String selectedStoreName = timeSlot.getLlmRecommendation().getSelected();
+                Optional<Place> place = placeRepository.findByName(selectedStoreName);
                 
                 if (place.isPresent()) {
                     Place foundPlace = place.get();
                     coordinates.add(LocationCoordinate.builder()
-                            .storeName(storeName)
+                            .storeName(selectedStoreName)
                             .latitude(foundPlace.getLatitude())
                             .longitude(foundPlace.getLongitude())
                             .build());
-                    log.debug("장소 '{}'의 좌표 조회 성공: ({}, {})", 
-                            storeName, foundPlace.getLatitude(), foundPlace.getLongitude());
+                    log.info("LLM 추천 장소 '{}'의 좌표 조회 성공: ({}, {})", 
+                            selectedStoreName, foundPlace.getLatitude(), foundPlace.getLongitude());
                 } else {
-                    log.warn("장소 '{}'를 데이터베이스에서 찾을 수 없습니다.", storeName);
+                    log.warn("LLM 추천 장소 '{}'를 데이터베이스에서 찾을 수 없습니다.", selectedStoreName);
                     // null 좌표로 추가하여 순서 유지
                     coordinates.add(LocationCoordinate.builder()
-                            .storeName(storeName)
+                            .storeName(selectedStoreName)
                             .latitude(null)
                             .longitude(null)
                             .build());
                 }
             } else {
-                log.warn("TimeSlot에 topCandidates가 없습니다.");
+                log.warn("TimeSlot에 llm_recommendation이 없거나 selected 값이 null입니다.");
             }
         }
         
-        log.info("총 {}개의 장소 좌표를 조회했습니다.", coordinates.size());
+        log.info("총 {}개의 LLM 추천 장소 좌표를 조회했습니다.", coordinates.size());
         return coordinates;
     }
     

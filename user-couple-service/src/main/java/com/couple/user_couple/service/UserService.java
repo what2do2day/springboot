@@ -88,7 +88,7 @@ public class UserService {
     // 사용자 벡터 생성 메서드
     private void createUserVector(UUID userId) {
         try {
-            String url = "http://localhost:8086/api/user-vectors";
+            String url = "http://question-answer-service:8086/api/user-vectors";
             
             webClient.post()
                     .uri(url)
@@ -105,7 +105,7 @@ public class UserService {
     // 사용자 notification 생성 메서드
     private void createNotification(UUID userId, String fcmToken, String sendTime) {
         try {
-            String url = "http://localhost:8086/api/notifications";
+            String url = "http://question-answer-service:8086/api/notifications";
             
             // NotificationRequest 형태로 데이터 구성
             var requestBody = Map.of(

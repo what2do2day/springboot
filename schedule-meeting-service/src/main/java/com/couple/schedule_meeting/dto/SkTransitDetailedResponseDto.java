@@ -14,6 +14,8 @@ import java.util.List;
 public class SkTransitDetailedResponseDto {
     
     private MetaData metaData;
+    private Integer status;
+    private String error;
     
     @Data
     @Builder
