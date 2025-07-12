@@ -12,7 +12,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CoupleVectorsResponse {
+public class CoupleResponse {
 
     private UUID coupleId;
     private CoupleUserVectorResponse user1;

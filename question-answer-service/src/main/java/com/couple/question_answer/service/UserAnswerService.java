@@ -2,6 +2,7 @@ package com.couple.question_answer.service;
 
 import com.couple.question_answer.dto.UserAnswerRequest;
 import com.couple.question_answer.dto.UserAnswerResponse;
+import com.couple.question_answer.dto.CoupleResponse;
 import com.couple.question_answer.entity.Question;
 import com.couple.question_answer.entity.UserAnswer;
 import com.couple.question_answer.entity.VectorChange;
@@ -28,6 +29,17 @@ public class UserAnswerService {
     public UserAnswerResponse submitAnswer(UUID userId, UUID coupleId, UserAnswerRequest request) {
         log.info("답변 제출 요청 - userId: {}, coupleId: {}, questionId: {}, selectedChoice: {}",
                 userId, coupleId, request.getQuestionId(), request.getSelectedChoice());
+
+        // 외부 서비스에서 coupleId 조회
+        try {
+            log.info("외부 서비스에서 coupleId 조회 시작 - userId: {}", userId);
+            CoupleResponse coupleResponse = userVectorService.getCoupleVectors(userId);
+            coupleId = coupleResponse.getCoupleId();
+            log.info("외부 서비스에서 coupleId 조회 완료 - coupleId: {}", coupleId);
+        } catch (Exception e) {
+            log.error("외부 서비스에서 coupleId 조회 실패 - userId: {}, error: {}", userId, e.getMessage());
+            throw new RuntimeException("커플 정보를 조회할 수 없습니다: " + e.getMessage());
+        }
 
         // 1. 답변 저장
         UserAnswer userAnswer = UserAnswer.builder()

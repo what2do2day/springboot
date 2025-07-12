@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-@Component
+//@Component
 @RequiredArgsConstructor
 @Slf4j
 public class ScheduleNotificationScheduler {

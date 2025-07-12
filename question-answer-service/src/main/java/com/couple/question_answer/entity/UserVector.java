@@ -35,7 +35,7 @@ public class UserVector {
     public static UserVector createInitialVector(UUID userId) {
         Map<String, Double> initialVectors = new java.util.HashMap<>();
         for (int i = 1; i <= 50; i++) {
-            initialVectors.put("vec_" + i, 0.0);
+            initialVectors.put("vec_" + i, 0.02);
         }
 
         return UserVector.builder()
